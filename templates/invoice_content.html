@@ -1,0 +1,187 @@
+<!-- Invoice Content Template - Used by both single and multi-copy invoices -->
+
+<div class="header-container">
+    <div>
+        {% if shop and shop.logo %}
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
+        {% endif %}
+    </div>
+    <div class="company-info">
+        <div class="company-title">{{ shop.shop_name if shop else 'Shop Name' }}</div>
+        <div class="company-details">
+            {{ shop.shop_address if shop else 'Address' }}<br>
+            Email: {{ shop.shop_email if shop else 'email@example.com' }} | Phone: {{ shop.shop_phone if shop else '+91 XXXXX XXXXX' }}
+        </div>
+    </div>
+</div>
+
+<div class="invoice-title">TAX INVOICE</div>
+
+<!-- GSTIN / STATE / PAN -->
+<div class="info-grid">
+    <div class="info-box">
+        <div class="info-box-title">GSTIN</div>
+        <div>{{ shop.gst_number if shop else '27AALPG5876N1Z9' }}</div>
+    </div>
+    <div class="info-box">
+        <div class="info-box-title">State Code</div>
+        <div>27 - Maharashtra</div>
+    </div>
+    <div class="info-box">
+        <div class="info-box-title">PAN NO.</div>
+        <div>{{ shop.owner_name if shop else 'AAXPD5055K' }}</div>
+    </div>
+</div>
+
+<!-- Invoice Details & Bill To -->
+<div class="details-grid">
+    <!-- Invoice Details -->
+    <div class="details-box">
+        <div class="details-box-title">📋 INVOICE DETAILS</div>
+        <div class="detail-row">
+            <span class="detail-label">Invoice No:</span>
+            <span class="detail-value">{{ invoice.invoice_number }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Invoice Date:</span>
+            <span class="detail-value">{{ invoice.invoice_date.strftime('%d-%b-%Y') if invoice.invoice_date else 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Status:</span>
+            <span class="detail-value">{{ invoice.status }}</span>
+        </div>
+    </div>
+
+    <!-- Bill To (Customer) -->
+    <div class="details-box">
+        <div class="details-box-title">👤 BILL TO (BUYER)</div>
+        <div class="detail-row">
+            <span class="detail-label">Name:</span>
+            <span class="detail-value">{{ invoice.customer.customer_name if invoice.customer else 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Address:</span>
+            <span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">GSTIN:</span>
+            <span class="detail-value">{{ invoice.customer.gst_number if invoice.customer else 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">State Code:</span>
+            <span class="detail-value">27</span>
+        </div>
+    </div>
+</div>
+
+<!-- Items Table -->
+<table>
+    <thead>
+        <tr>
+            <th style="width: 5%">SL.</th>
+            <th style="width: 35%">PRODUCT DESCRIPTION</th>
+            <th style="width: 10%">HSN/SAC</th>
+            <th style="width: 8%">QTY</th>
+            <th style="width: 8%">UNIT</th>
+            <th style="width: 12%">RATE</th>
+            <th style="width: 12%">AMOUNT</th>
+            <th style="width: 10%">TAX %</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if invoice.items %}
+            {% for item in invoice.items %}
+            <tr>
+                <td style="text-align: center;">{{ loop.index }}</td>
+                <td>{{ item.product.product_name if item.product else 'Product' }}</td>
+                <td style="text-align: center;">{{ item.product.product_code if item.product else 'N/A' }}</td>
+                <td style="text-align: center;">{{ "%.2f"|format(item.quantity) }}</td>
+                <td style="text-align: center;">Pcs</td>
+                <td style="text-align: right;">₹ {{ "%.2f"|format(item.unit_price) }}</td>
+                <td style="text-align: right;">₹ {{ "%.2f"|format(item.line_total) }}</td>
+                <td style="text-align: center;">{{ item.gst_percentage }}%</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+        <tr>
+            <td colspan="8" style="text-align: center; color: #999;">No items in invoice</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<!-- Amount in Words & Totals -->
+<div class="amount-section">
+    <!-- Amount in Words -->
+    <div class="amount-box">
+        <div class="amount-title">💬 AMOUNT IN WORDS</div>
+        <div class="amount-row">
+            <span class="amount-label">Subtotal:</span>
+            <span class="amount-value">Rupees {{ "%.2f"|format(invoice.subtotal) }} Only</span>
+        </div>
+        <div class="amount-row">
+            <span class="amount-label">Tax Amount:</span>
+            <span class="amount-value">Rupees {{ "%.2f"|format(invoice.total_tax) }} Only</span>
+        </div>
+        <div class="amount-row total-row">
+            <span class="amount-label">Total:</span>
+            <span class="amount-value">Rupees {{ "%.2f"|format(invoice.total_amount) }} Only</span>
+        </div>
+    </div>
+
+    <!-- Totals Summary -->
+    <div class="amount-box">
+        <div class="amount-title">💰 TOTALS SUMMARY</div>
+        <div class="amount-row">
+            <span class="amount-label">Subtotal (Before Tax):</span>
+            <span class="amount-value">₹ {{ "%.2f"|format(invoice.subtotal) }}</span>
+        </div>
+        <div class="amount-row">
+            <span class="amount-label">CGST @ 9%:</span>
+            <span class="amount-value">₹ {{ "%.2f"|format(invoice.total_tax / 2) }}</span>
+        </div>
+        <div class="amount-row">
+            <span class="amount-label">SGST @ 9%:</span>
+            <span class="amount-value">₹ {{ "%.2f"|format(invoice.total_tax / 2) }}</span>
+        </div>
+        <div class="amount-row">
+            <span class="amount-label">Discount:</span>
+            <span class="amount-value">₹ {{ "%.2f"|format(invoice.discount) }}</span>
+        </div>
+        <div class="amount-row total-row">
+            <span class="amount-label">TOTAL INVOICE VALUE:</span>
+            <span class="amount-value">₹ {{ "%.2f"|format(invoice.total_amount) }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Details -->
+<div class="footer-section">
+    <div class="footer-title">🏦 PAYMENT DETAILS</div>
+    Bank: Union Bank of India<br>
+    Account No: 502500010000005<br>
+    IFSC Code: UBIN0550472<br>
+    RTGS: UBIN0550472
+</div>
+
+<!-- Transit & Important Notes -->
+<div class="footer-section">
+    <div class="footer-title">⚠️ TRANSIT & IMPORTANT NOTES:</div>
+    • Goods are to be received within 2 days. / Transport Insurance to be done by Consignee / E-Way Bill No as per GST Rules
+</div>
+
+<!-- Signature Section -->
+<div class="signature-section">
+    <div class="signature-box">
+        <div>Authorized Signatory</div>
+        <div class="signature-label">For V S ABRASIVE PRODUCTS</div>
+    </div>
+    <div class="signature-box">
+        <div>Receiver's Seal & Signature</div>
+        <div class="signature-label">Receiver's Seal</div>
+    </div>
+    <div class="signature-box">
+        <div>Company Seal</div>
+        <div class="signature-label">Company Seal</div>
+    </div>
+</div>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Invoice - {{ invoice.invoice_number }} (3 Copies)</title>
+    <style>
+        /* Professional A4 invoice: final design */
+        @page { size: A4; margin: 8mm; }
+        * { box-sizing: border-box; }
+        html, body { height:100%; margin:0; padding:0; font-family: 'Helvetica Neue', Arial, sans-serif; color:#111; background: #fff; }
+
+        /* Outer page box sized to A4 */
+        .invoice-page {
+            position: relative; /* ensure absolute children (copy-label) are relative to this box */
+            width:210mm; max-width:210mm; margin: 8mm auto; padding: 6mm; background: #fff; page-break-after: always; border: 2px solid #000; }
+        .invoice-page:last-child { page-break-after: auto; }
+
+        /* Header layout: centered company name with small address line */
+        .header-container { text-align: center; padding-bottom:6px; margin-bottom:6px; }
+        .logo { width: 56px; height:56px; vertical-align: middle; margin-bottom:4px; }
+        .company-title { font-size:22px; font-weight:800; letter-spacing:1px; margin:0; }
+        .company-details { font-size:10px; margin-top:4px; color:#222; }
+        .company-contact { font-size:10px; margin-top:2px; }
+
+        /* Invoice header bar (thin) */
+        .invoice-header { font-size:12px; font-weight:700; margin:6px 0; }
+
+        /* Details boxes (two columns) */
+        .details-row { display:flex; gap:8px; margin-bottom:6px; }
+        .details-box { flex:1; border:1px solid #000; padding:6px; font-size:10px; }
+        .details-box-title { font-weight:700; font-size:10px; margin-bottom:6px; }
+        .detail-row { display:flex; gap:6px; margin-bottom:2px; }
+        .detail-label { width:110px; font-weight:700; }
+        .detail-value { flex:1; }
+
+        /* Items table: strong borders like printed sample */
+        .items-table { width:100%; border-collapse: collapse; font-size:10px; margin-bottom:6px; }
+        .items-table th, .items-table td { border:1px solid #000; padding:6px 4px; }
+        .items-table th { font-weight:700; text-align:center; font-size:10px; }
+        .items-table td { text-align:center; vertical-align:middle; }
+        .items-table td:nth-child(2) { text-align:left; padding-left:8px; }
+
+        /* Note row and totals */
+        .note-row { border:1px solid #000; padding:5px; font-size:10px; margin-bottom:5px; }
+        .amount-words { display:flex; gap:8px; margin-bottom:5px; }
+        .amount-words-left { width:55%; border:1px solid #000; padding:8px; font-size:10px; }
+        .amount-words-left .cert-box { width:100%; }
+        .amount-words-left .cert-box div { padding:3px 0; }
+        .amount-words-right { flex:1; padding:6px; font-size:10px; border:1px solid #000; }
+        .totals-small-table { width:100%; border-collapse: collapse; }
+        .totals-small-table td { padding:4px 6px; }
+
+        /* Bank and seal area: left bank details, right seal box */
+        .bank-and-seal { display:flex; gap:8px; margin-top:6px; }
+        .bank-box { flex:1; border:1px solid #000; padding:6px; font-size:9px; }
+        .seal-box { width:260px; border:1px solid #000; padding:6px; display:flex; flex-direction:column; justify-content:flex-end; }
+        .seal-line { border-bottom:1px solid #000; height:18px; display:block; margin-bottom:6px; }
+        .seal-label { text-align:center; font-size:10px; font-weight:700; }
+
+        /* Copy label at top-right of each invoice page */
+        .copy-label { position:absolute; right:12px; top:12px; font-size:10px; font-weight:800; padding:4px 8px; background:#fff; border:2px solid #000; border-radius:4px; box-shadow:0 1px 0 rgba(0,0,0,0.06); z-index:10; }
+        .copy-1 { border-color: #c0392b; color: #c0392b; }
+        .copy-2 { border-color: #1a5276; color: #1a5276; }
+        .copy-3 { border-color: #145a32; color: #145a32; }
+
+        /* Hide floating action buttons in print */
+        .action-buttons { display:none; }
+
+        /* Floating right-side control panel (screen only) */
+        .floating-panel {
+            position: fixed;
+            right: 18px;
+            top: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 12000;
+            align-items: center;
+        }
+        .panel-btn {
+            width:48px;
+            height:48px;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#2563eb;
+            color:#fff;
+            border:none;
+            box-shadow: 0 6px 18px rgba(16,24,40,0.15);
+            cursor: pointer;
+            font-size:18px;
+        }
+        .panel-btn.download { background: #10b981; }
+        .panel-btn.back { background: #6b7280; }
+        .panel-btn.print { background: #111827; }
+        .panel-select { appearance: none; -webkit-appearance: none; padding:8px 10px; border-radius:8px; border:none; background:#2563eb; color:#fff; font-weight:700; }
+
+        /* Additional helper styles to match the previous boxed layout */
+        .bottom-three { display:flex; gap:8px; margin-top:10px; }
+        .box { flex:1; border:1px solid #c0c0c0; padding:8px; font-size:9px; background:#fff; }
+        .box-title { font-weight:700; font-size:10px; margin-bottom:6px; }
+        .box-body { font-size:9px; }
+        .right { text-align:right; }
+        .total-row td { font-weight:800; border-top:2px solid #000; padding-top:6px; }
+        .items-wrapper { width:100%; overflow:visible; }
+        .table-scroll { max-height:none; overflow:visible; }
+        .cert-box { background: transparent; padding:4px; border:1px solid #000; }
+
+    @media print {
+        /* Make overall print text larger and ensure borders are visible */
+        html, body { background:#fff; font-size:11px !important; color:#000 !important; }
+
+        /* Outer page box: force solid visible border for print */
+        .invoice-page {
+            margin:0 !important;
+            padding:6mm !important; 
+            border:2px solid #000 !important;
+            box-shadow:none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Remove inner box border since we only have outer border now */
+        .invoice-inner {
+            border:none !important;
+            box-shadow:none !important;
+            padding:0 !important;
+        }
+
+        /* Ensure table borders are solid and printable */
+        .items-table, .items-table th, .items-table td, .details-box, .note-row, .box {
+            border:1px solid #000 !important;
+            color: #000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Remove any background or shadows that may interfere with border printing */
+        .copy-label { box-shadow:none !important; }
+        .panel-btn, .floating-panel { display:none !important; }
+
+        /* Keep page breaks for copies */
+        .invoice-page { page-break-after: always !important; }
+        .invoice-page:last-child { page-break-after: auto !important; }
+    }
+
+    /* Readability overrides: increase base font sizes for screen and print so A4 output is legible */
+    html, body { font-size: 12.5px !important; }
+
+    /* Slightly larger company title for visibility */
+    .company-title { font-size: 26px !important; }
+
+    /* Make details and boxes more readable */
+    .details-box, .details-box-title, .detail-row, .detail-label, .detail-value { font-size: 11px !important; }
+
+    /* Table legibility */
+    .items-table { font-size: 11px !important; }
+    .items-table th { font-size: 10.5px !important; padding:8px 6px !important; }
+    .items-table td { font-size: 10.5px !important; padding:8px 6px !important; }
+
+    /* Totals, notes and certificate slightly larger */
+    .note-row, .amount-words-left, .amount-words-right, .totals-small-table td, .cert-box, .box-body { font-size: 10.5px !important; }
+
+    /* Increase spacing in bottom boxes */
+    .box { padding:10px !important; }
+
+    /* Make copy-label slightly bigger but keep compact */
+    .copy-label { font-size:11px !important; padding:6px 10px !important; }
+
+    /* Print-specific tweaks */
+    @media print {
+        html, body { font-size: 12px !important; }
+        .invoice-page { padding: 10mm !important; }
+        .company-title { font-size: 24px !important; }
+        .items-table th, .items-table td { padding:6px 6px !important; }
+        /* Ensure borders stay visible when printing */
+        .invoice-page, .details-box, .items-table th, .items-table td, .note-row, .box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    </style>
+</head>
+<body data-invoice-id="{{ invoice.id }}">
+
+{% set copies = [
+    ('ORIGINAL — FOR RECIPIENT',   '#c0392b'),
+    ('DUPLICATE — FOR TRANSPORTER',   '#1a5276'),
+    ('TRIPLICATE — FOR SUPPLIER','#145a32')
+] %}
+
+{% for copy_label, label_color in copies %}
+<div class="invoice-page">
+
+    <!-- Copy label at top-right outside the invoice content -->
+    <div class="copy-label {{ 'copy-' ~ loop.index }}">{{ copy_label }}</div>
+
+    <!-- HEADER -->
+    <div class="header-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo"><br>
+        <div class="company-title">V S ABRASIVE PRODUCTS</div>
+        <div class="company-details">S.No. 206/1, B-1-R G Industrial Hub, Vehhale Road, Near Sangamner Co-Op. Ind., Vehhale, Tal.: Sangamner, Dist.: Ahilyanagar - 422605 (Maharashtra)</div>
+        <!-- restored: show landline only as before -->
+        <div class="company-contact">E: vsabrasives@gmail.com | MSME: UDYAM-MH-01-0202254 | PH: (02425) 297756 | Mobile: +91-9876543210</div>
+        <div class="invoice-header">TAX INVOICE</div>
+    </div>
+
+    <!-- ══ INVOICE + BUYER DETAILS ══════════════════════════════════ -->
+    <div class="details-row">
+        <div class="details-box">
+            <div class="details-box-title">📋 INVOICE DETAILS</div>
+            <div class="detail-row"><span class="detail-label">Invoice No:</span><span class="detail-value"><strong>{{ invoice.invoice_number }}</strong></span></div>
+            <div class="detail-row"><span class="detail-label">Invoice Date:</span><span class="detail-value">{{ invoice.invoice_date.strftime('%d-%m-%Y') if invoice.invoice_date else 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">PO Number:</span><span class="detail-value">{{ invoice.po_number if invoice.po_number else 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">Challan No:</span><span class="detail-value">{{ invoice.challan_no if invoice.challan_no else invoice.invoice_number }}</span></div>
+            <div class="detail-row"><span class="detail-label">Place of Supply:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">State:</span><span class="detail-value">{{ invoice.customer.customer_state if invoice.customer else 'N/A' }}</span></div>
+        </div>
+
+        <div class="details-box">
+            <div class="details-box-title">🚚 SHIPMENT DETAILS</div>
+            <div class="detail-row"><span class="detail-label">Challan No:</span><span class="detail-value">{{ invoice.challan_no if invoice.challan_no else invoice.invoice_number }}</span></div>
+            <div class="detail-row"><span class="detail-label">Transport Mode:</span><span class="detail-value">{{ invoice.transport_mode if invoice.transport_mode else 'Road' }}</span></div>
+            <div class="detail-row"><span class="detail-label">Vehicle No:</span><span class="detail-value">{{ invoice.vehicle_number if invoice.vehicle_number else 'TBD' }}</span></div>
+            <div class="detail-row"><span class="detail-label">E-Way Bill:</span><span class="detail-value">{{ invoice.e_weighment if invoice.e_weighment else 'Not Applicable' }}</span></div>
+            <div class="detail-row"><span class="detail-label">Contact Person:</span><span class="detail-value">{{ invoice.contact_person if invoice.contact_person else 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">Payment Terms:</span><span class="detail-value">{{ invoice.pay_terms if invoice.pay_terms else '0 Days' }}</span></div>
+        </div>
+    </div>
+
+    <div class="details-row">
+        <div class="details-box">
+            <div class="details-box-title">👤 BILL TO (BUYER)</div>
+            <div class="detail-row"><span class="detail-label">Name:</span><span class="detail-value"><strong>{{ invoice.customer.customer_name if invoice.customer else 'Walk-in Customer' }}</strong></span></div>
+            <div class="detail-row"><span class="detail-label">Address:</span><span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">City:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">GSTIN:</span><span class="detail-value">{{ invoice.customer.gst_number if invoice.customer and invoice.customer.gst_number else 'Unregistered' }}</span></div>
+            <div class="detail-row"><span class="detail-label">State Code:</span><span class="detail-value">27</span></div>
+        </div>
+
+        <div class="details-box">
+            <div class="details-box-title">📍 SHIP TO (CONSIGNEE)</div>
+            <div class="detail-row"><span class="detail-label">Name:</span><span class="detail-value"><strong>{{ invoice.customer.customer_name if invoice.customer else 'Walk-in Customer' }}</strong></span></div>
+            <div class="detail-row"><span class="detail-label">Address:</span><span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">City:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+            <div class="detail-row"><span class="detail-label">GSTIN:</span><span class="detail-value">{{ invoice.customer.gst_number if invoice.customer and invoice.customer.gst_number else 'Unregistered' }}</span></div>
+            <div class="detail-row"><span class="detail-label">State Code:</span><span class="detail-value">27</span></div>
+        </div>
+    </div>
+
+    <!-- ══ ITEMS TABLE ════════════════════════════════════════════════ -->
+    <div class="items-wrapper table-scroll">
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width:5%">SL.</th>
+                <th style="width:25%">PRODUCT DESCRIPTION</th>
+                <th style="width:8%">HSN/SAC</th>
+                <th style="width:8%">QTY</th>
+                <th style="width:8%">UNIT</th>
+                <th style="width:12%">RATE</th>
+                <th style="width:12%">AMOUNT</th>
+                <th style="width:7%">TAX %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ item.product.product_name if item.product else 'Product' }}</td>
+                <td>{{ item.product.hsn_code if item.product else '0000' }}</td>
+                <td>{{ "%.2f"|format(item.quantity) }}</td>
+                <td>{{ item.product.unit if item.product else 'NOS' }}</td>
+                <td>₹ {{ "%.2f"|format(item.unit_price) }}</td>
+                <td>₹ {{ "%.2f"|format(item.line_total) }}</td>
+                <td>{{ "%.0f"|format(item.gst_percentage) }}%</td>
+            </tr>
+            {% endfor %}
+
+            {# Ensure table always shows 5 rows for consistent print height #}
+            {% set count = (invoice.items|length) if invoice.items else 0 %}
+            {% if count < 5 %}
+                {% for i in range(5 - count) %}
+                <tr>
+                    <td>{{ count + i + 1 }}</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+    </div>
+
+    <!-- ══ NOTE ══════════════════════════════════════════════════════ -->
+    <div class="note-row">
+        ⚠️ NOTE: Breakage, Damage, etc. in transit cannot be entertained | Transport charges as per agreement | Transit Insurance to be done by Consignee
+    </div>
+
+    <!-- ══ AMOUNT IN WORDS + TOTALS ══════════════════════════════════ -->
+    <div class="amount-words">
+        <div class="amount-words-left">
+            <div class="cert-box">
+                <div style="font-weight:800; margin-bottom:6px;">💬 AMOUNT IN WORDS</div>
+                <div>Subtotal: <strong>{{ amount_in_words(invoice.subtotal) }} Only</strong></div>
+                <div>Tax Amount: <strong>{{ amount_in_words(invoice.total_tax) }} Only</strong></div>
+                <div>Transport Charges: <strong>{{ amount_in_words(invoice.transport_charges or 0) }} Only</strong></div>
+                <div>Discount: <strong>{{ amount_in_words(invoice.discount or 0) }} Only</strong></div>
+                <div>Total: <strong>{{ amount_in_words(invoice.total_amount) }} Only</strong></div>
+            </div>
+        </div>
+        <div class="amount-words-right">
+            <table class="totals-small-table">
+                <tr><td>Subtotal (Before Tax)</td><td class="right">₹ {{ "%.2f"|format(invoice.subtotal) }}</td></tr>
+                <tr><td>CGST</td><td class="right">₹ {% set cgst_total = invoice.items | map(attribute='cgst_amount') | sum %}{{ "%.2f"|format(cgst_total) }}</td></tr>
+                <tr><td>SGST</td><td class="right">₹ {% set sgst_total = invoice.items | map(attribute='sgst_amount') | sum %}{{ "%.2f"|format(sgst_total) }}</td></tr>
+                <tr><td>Total Tax (GST)</td><td class="right">₹ {{ "%.2f"|format(invoice.total_tax) }}</td></tr>
+                <tr><td>🚚 Transport Charges</td><td class="right">₹ {{ "%.2f"|format(invoice.transport_charges or 0) }}</td></tr>
+                <tr><td>💰 Discount</td><td class="right">₹ {{ "%.2f"|format(invoice.discount or 0) }}</td></tr>
+                <tr><td>Round Off</td><td class="right">₹ 0.00</td></tr>
+                <tr class="total-row"><td>TOTAL INVOICE VALUE</td><td class="right">₹ {{ "%.2f"|format(invoice.total_amount) }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══ GST CERTIFICATION (boxed) ══════════════════════════════════════════ -->
+    <div class="cert-box" style="margin-top:8px; padding:6px;">
+        <div style="font-weight:800; margin-bottom:5px; font-size:11px;">GST CERTIFICATION:</div>
+        <div style="font-size:9px; line-height:1.5;">I/we certify that our registration certificate under the GST Act, 2017 is in force on the date on which the supply of goods specified in this tax invoice was made by me/us. The transaction of supply covered by this tax invoice has been effected by me/us and it shall be accounted for in the invoices while filing of returns. The tax paid on supplies has been or shall be paid. Further certified that particulars given above are true and correct and the amount indicated represents the prices actually charged and there is no additional consideration directly or indirectly from the buyer. <strong>Interest @ 24% p.a. charged on outstanding amounts beyond 30 days.</strong></div>
+    </div>
+
+    <!-- ══ TRANSIT NOTES ══════════════════════════════════════════════ -->
+    <div class="cert-box" style="margin-top:8px; padding:6px;">
+        <div class="insurance-title" style="font-weight:800; margin-bottom:5px; font-size:11px;">⚠️ TRANSIT & IMPORTANT NOTES:</div>
+        <div style="font-size:9px; line-height:1.5;">✓ Payment to be made by A/c Payee Cheque Only &nbsp;|&nbsp; ✓ Transit Insurance to be done by Consignee &nbsp;|&nbsp; ✓ E-Way Bill: As per GST Rules</div>
+    </div>
+
+    <!-- ══ Bottom three boxes: Bank | Receiver Seal | Authorized Signatory -->
+    <div class="bottom-three">
+        <div class="box">
+            <div class="box-title">🏦 COMPANY BANK DETAILS</div>
+            <div class="box-body">
+                <div><strong>Bank:</strong> Union Bank of India</div>
+                <div><strong>Account:</strong> V S Abrasive Products</div>
+                <div><strong>A/C No:</strong> 322501010033972</div>
+                <div><strong>IFSC:</strong> UBIN0532258</div>
+            </div>
+        </div>
+        <div class="box">
+            <div class="box-title">📋 RECEIVER'S SEAL</div>
+            <div class="box-body">
+                <div style="height:44px;border-top:2px dashed var(--border);margin-top:12px"></div>
+                <div style="margin-top:6px;font-weight:700">Receiver's Seal &amp; Signature</div>
+            </div>
+        </div>
+        <div class="box">
+            <div class="box-title">✅ AUTHORIZED SIGNATORY</div>
+            <div class="box-body">
+                <div style="height:44px;border-top:2px dashed var(--border);margin-top:12px"></div>
+                <div style="margin-top:6px;font-weight:700">Authorized Signatory</div>
+            </div>
+        </div>
+    </div>
+
+ </div><!-- /.invoice-page -->
+{% endfor %}
+
+<!-- Floating right-side control panel (screen only) -->
+<div class="floating-panel" role="toolbar" aria-label="Invoice actions">
+    <button class="panel-btn back" title="Back" onclick="window.location.href='/invoices'">←</button>
+    <select id="printCopiesSelect" class="panel-select" title="Select copies to print">
+        <option value="3">3 Copies</option>
+        <option value="1">1 Copy</option>
+        <option value="2">2 Copies</option>
+    </select>
+    <button class="panel-btn print" title="Print" onclick="printCopies()">🖨️</button>
+    <button class="panel-btn download" title="Download PDF" onclick="downloadInvoicePDF()">⬇️</button>
+</div>
+
+<script>
+function downloadInvoicePDF() {
+    const invoiceId = document.body.dataset.invoiceId;
+    // Use the download-pdf endpoint which returns actual PDF file
+    window.location.href = `/api/invoices/${invoiceId}/download-pdf`;
+}
+
+// Print only the selected number of copies (1, 2 or 3)
+function printCopies() {
+    try {
+        const copies = parseInt(document.getElementById('printCopiesSelect').value || '3');
+        const pages = Array.from(document.querySelectorAll('.invoice-page'));
+        if (!pages.length) { window.print(); return; }
+
+        const selected = pages.slice(0, copies);
+
+        // Collect stylesheet tags (inline <style> and external <link rel="stylesheet">)
+        let styles = '';
+        document.querySelectorAll('link[rel="stylesheet"]').forEach(l => styles += l.outerHTML);
+        document.querySelectorAll('style').forEach(s => styles += s.outerHTML);
+
+        // Build printable HTML
+        const content = selected.map(p => `<div class="invoice-page">${p.innerHTML}</div>`).join('\n');
+        const printHtml = `<!doctype html><html><head><meta charset="utf-8">${styles}
+            <style>@page{size:A4;margin:12mm} body{margin:0;padding:0;background:#fff} .invoice-page{page-break-after:always;box-sizing:border-box}</style>
+            </head><body>${content}</body></html>`;
+
+        // Open new window for printing and wait for load to ensure images/fonts are ready
+        const w = window.open('', '_blank');
+        w.document.open();
+        w.document.write(printHtml);
+        w.document.close();
+
+        // Try to print once the window finishes loading
+        const tryPrint = () => {
+            try {
+                w.focus();
+                w.print();
+                // Close print window after short delay
+                setTimeout(() => { try { w.close(); } catch (e) {} }, 800);
+            } catch (err) {
+                setTimeout(tryPrint, 300);
+            }
+        };
+
+        // Attach load handler; fallback to timeout if load doesn't fire
+        if (w) {
+            w.onload = tryPrint;
+            setTimeout(() => { if (!w.closed) tryPrint(); }, 1200);
+        } else {
+            // Popup blocked or failed — fall back to current window print
+            window.print();
+        }
+    } catch (err) {
+        console.error('Print error:', err);
+        window.print();
+    }
+}
+
+</script>
+
+</body>
+</html>

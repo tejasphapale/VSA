@@ -1,0 +1,1159 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Shop Billing Software{% endblock %}
+
+{% block content %}
+
+<style>
+
+/* =========================================================
+   MODERN REPORTS PAGE CSS
+========================================================= */
+
+.page-header{
+    margin-bottom:30px;
+}
+
+.page-header h1{
+    font-size:34px;
+    font-weight:800;
+    color:#0f172a;
+    letter-spacing:-0.5px;
+}
+
+/* =========================================================
+   TABS
+========================================================= */
+
+.tabs{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:28px;
+}
+
+.tab-btn{
+    border:none;
+    padding:14px 24px;
+    border-radius:16px;
+
+    background:#ffffff;
+    color:#475569;
+
+    font-size:15px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    border:1px solid #e2e8f0;
+
+    transition:all 0.3s ease;
+
+    box-shadow:
+        0 4px 12px rgba(15,23,42,0.04);
+}
+
+.tab-btn:hover{
+    transform:translateY(-2px);
+    background:#f8fafc;
+}
+
+.tab-btn.active{
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #1d4ed8
+        );
+
+    color:#ffffff;
+
+    border-color:#2563eb;
+
+    box-shadow:
+        0 12px 24px rgba(37,99,235,0.25);
+}
+
+/* =========================================================
+   TAB CONTENT
+========================================================= */
+
+.tab-content{
+    display:none;
+}
+
+.tab-content.active{
+    display:block;
+    animation:fadeIn 0.3s ease;
+}
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.card{
+    background:#ffffff;
+    border-radius:26px;
+    overflow:hidden;
+
+    border:1px solid #e2e8f0;
+
+    box-shadow:
+        0 12px 30px rgba(15,23,42,0.05);
+}
+
+.card-header{
+    padding:24px 30px;
+
+    border-bottom:1px solid #edf2f7;
+
+    background:
+        linear-gradient(
+            180deg,
+            #ffffff,
+            #f8fafc
+        );
+}
+
+.card-header h3{
+    font-size:24px;
+    font-weight:700;
+    color:#0f172a;
+}
+
+.card-body{
+    padding:30px;
+}
+
+/* =========================================================
+   FILTERS
+========================================================= */
+
+.filters-row{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    flex-wrap:wrap;
+
+    margin-bottom:28px;
+}
+
+.filters-row span{
+    color:#64748b;
+    font-weight:600;
+}
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+.input{
+    height:52px;
+    padding:0 18px;
+
+    border-radius:16px;
+    border:1px solid #dbe4ee;
+
+    background:#ffffff;
+
+    font-size:15px;
+    color:#0f172a;
+
+    transition:all 0.3s ease;
+}
+
+.input:focus{
+    outline:none;
+
+    border-color:#2563eb;
+
+    box-shadow:
+        0 0 0 4px rgba(37,99,235,0.10);
+}
+
+input[type="date"]{
+    min-width:180px;
+}
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+.btn{
+    height:52px;
+    padding:0 24px;
+
+    border:none;
+    border-radius:16px;
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:15px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:all 0.3s ease;
+}
+
+.btn-primary{
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #1d4ed8
+        );
+
+    color:#ffffff;
+
+    box-shadow:
+        0 10px 25px rgba(37,99,235,0.22);
+}
+
+.btn-primary:hover{
+    transform:translateY(-3px);
+
+    box-shadow:
+        0 16px 35px rgba(37,99,235,0.30);
+}
+
+/* =========================================================
+   SUMMARY CARDS
+========================================================= */
+
+.report-summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:22px;
+
+    margin-bottom:30px;
+}
+
+.summary-card{
+    background:#f8fafc;
+
+    border-radius:22px;
+
+    padding:24px;
+
+    border:1px solid #e2e8f0;
+
+    transition:all 0.3s ease;
+}
+
+.summary-card:hover{
+    transform:translateY(-4px);
+
+    box-shadow:
+        0 12px 24px rgba(15,23,42,0.06);
+}
+
+.summary-label{
+    font-size:14px;
+    color:#64748b;
+    margin-bottom:10px;
+    font-weight:600;
+}
+
+.summary-value{
+    font-size:30px;
+    font-weight:800;
+    color:#0f172a;
+}
+
+/* =========================================================
+   SECONDARY TABS
+========================================================= */
+
+.tabs-secondary{
+    display:flex;
+    gap:14px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+}
+
+.tab-secondary-btn{
+    border:none;
+
+    padding:12px 20px;
+
+    border-radius:14px;
+
+    background:#f1f5f9;
+    color:#475569;
+
+    font-size:14px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:all 0.3s ease;
+}
+
+.tab-secondary-btn.active{
+    background:#2563eb;
+    color:#ffffff;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.table thead tr{
+    background:#f8fafc;
+}
+
+.table th{
+    padding:18px 16px;
+
+    text-align:left;
+
+    font-size:13px;
+    font-weight:700;
+
+    color:#64748b;
+
+    border-bottom:1px solid #e2e8f0;
+}
+
+.table td{
+    padding:18px 16px;
+
+    border-bottom:1px solid #f1f5f9;
+
+    font-size:14px;
+    color:#334155;
+}
+
+.table tbody tr{
+    transition:all 0.3s ease;
+}
+
+.table tbody tr:hover{
+    background:#f8fafc;
+}
+
+/* =========================================================
+   TEXT CENTER
+========================================================= */
+
+.text-center{
+    text-align:center;
+    color:#94a3b8;
+    padding:24px !important;
+}
+
+/* =========================================================
+   SECTION TITLE
+========================================================= */
+
+.section-title{
+    margin-bottom:20px;
+
+    font-size:20px;
+    font-weight:700;
+    color:#0f172a;
+}
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:992px){
+
+    .report-summary{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:768px){
+
+    .page-header h1{
+        font-size:28px;
+    }
+
+    .card-body{
+        padding:20px;
+    }
+
+    .filters-row{
+        flex-direction:column;
+        align-items:stretch;
+    }
+
+    .btn{
+        width:100%;
+    }
+
+    .input{
+        width:100%;
+    }
+
+    .table{
+        display:block;
+        overflow-x:auto;
+        white-space:nowrap;
+    }
+
+    .tabs{
+        flex-direction:column;
+    }
+
+    .tab-btn{
+        width:100%;
+    }
+}
+
+@media(max-width:480px){
+
+    .page-header h1{
+        font-size:24px;
+    }
+
+    .summary-value{
+        font-size:24px;
+    }
+}
+
+</style>
+
+<div class="page-header">
+    <h1>Reports</h1>
+</div>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('sales')">
+        Sales Report
+    </button>
+
+    <button class="tab-btn" onclick="switchTab('inventory')">
+        Inventory Report
+    </button>
+
+    <button class="tab-btn" onclick="switchTab('customer')">
+        Customer Report
+    </button>
+
+    <button class="tab-btn" onclick="switchTab('customer-sales')">
+        Customer Sales Report
+    </button>
+</div>
+
+<!-- =========================================================
+     SALES REPORT
+========================================================= -->
+
+<div id="sales-tab" class="tab-content active">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h3>Sales Report</h3>
+        </div>
+
+        <div class="card-body">
+
+            <div class="filters-row">
+
+                <input type="date" id="salesStartDate" class="input">
+
+                <span>to</span>
+
+                <input type="date" id="salesEndDate" class="input">
+
+                <button class="btn btn-primary" onclick="loadSalesReport()">
+                    Generate Report
+                </button>
+
+            </div>
+
+            <div class="report-summary">
+
+                <div class="summary-card">
+                    <div class="summary-label">Total Sales</div>
+
+                    <div class="summary-value">
+                        ₹<span id="totalSales">0.00</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">Total Tax</div>
+
+                    <div class="summary-value">
+                        ₹<span id="totalTax">0.00</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">Total Discount</div>
+
+                    <div class="summary-value">
+                        ₹<span id="totalDiscount">0.00</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <h4 class="section-title">
+                Invoice Details
+            </h4>
+
+            <table class="table" id="salesTable">
+
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Subtotal</th>
+                        <th>Tax</th>
+                        <th>Discount</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            Select date range and click Generate
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================================================
+     INVENTORY REPORT
+========================================================= -->
+
+<div id="inventory-tab" class="tab-content">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h3>Inventory Report</h3>
+        </div>
+
+        <div class="card-body">
+
+            <div class="report-summary">
+
+                <div class="summary-card">
+                    <div class="summary-label">Total Products</div>
+
+                    <div class="summary-value">
+                        <span id="totalProducts">0</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">Low Stock Items</div>
+
+                    <div class="summary-value" style="color:#ea580c;">
+                        <span id="lowStockCount">0</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-label">
+                        Total Inventory Value
+                    </div>
+
+                    <div class="summary-value">
+                        ₹<span id="totalInventoryValue">0.00</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="tabs-secondary">
+
+                <button class="tab-secondary-btn active"
+                        onclick="switchInventoryView('low-stock')">
+
+                    Low Stock Items
+
+                </button>
+
+                <button class="tab-secondary-btn"
+                        onclick="switchInventoryView('all')">
+
+                    All Products
+
+                </button>
+
+            </div>
+
+            <table class="table" id="inventoryTable">
+
+                <thead>
+                    <tr>
+                        <th>Product Code</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Unit</th>
+                        <th>Quantity</th>
+                        <th>Reorder Level</th>
+                        <th>Unit Cost</th>
+                        <th>Total Value</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            Loading...
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================================================
+     CUSTOMER REPORT
+========================================================= -->
+
+<div id="customer-tab" class="tab-content">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h3>Customer Report</h3>
+        </div>
+
+        <div class="card-body">
+
+            <div class="filters-row">
+
+                <input type="text"
+                       id="customerReportSearch"
+                       class="input"
+                       placeholder="Search customers...">
+
+            </div>
+
+            <table class="table" id="customerTable">
+
+                <thead>
+                    <tr>
+                        <th>Customer Name</th>
+                        <th>Phone</th>
+                        <th>City</th>
+                        <th>Total Purchases</th>
+                        <th>Total Paid</th>
+                        <th>Outstanding</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            Loading...
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================================================
+     CUSTOMER SALES REPORT
+========================================================= -->
+
+<div id="customer-sales-tab" class="tab-content">
+
+    <div class="card">
+
+        <div class="card-header">
+            <h3>Customer Sales Report</h3>
+            <p style="color: #64748b; margin-top: 5px;">View all orders, payments, and download ledger for each customer</p>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Search and Filter -->
+            <div class="filters-row">
+                <input type="text"
+                       id="customerSalesSearch"
+                       class="input"
+                       placeholder="Search customer by name or phone...">
+                <button class="btn btn-primary" onclick="loadCustomerSalesReport()">
+                    Load Report
+                </button>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="report-summary">
+                <div class="summary-card">
+                    <div class="summary-label">Total Sales</div>
+                    <div class="summary-value">₹<span id="customerSalesTotalSales">0.00</span></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Amount Paid</div>
+                    <div class="summary-value" style="color: #10b981;">₹<span id="customerSalesTotalPaid">0.00</span></div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Amount Pending</div>
+                    <div class="summary-value" style="color: #f59e0b;">₹<span id="customerSalesTotalPending">0.00</span></div>
+                </div>
+            </div>
+
+            <!-- Customer List Table -->
+            <h4 class="section-title">Customer Sales Records</h4>
+            <table class="table" id="customerSalesTable">
+                <thead>
+                    <tr>
+                        <th>Customer Name</th>
+                        <th>Phone</th>
+                        <th>City</th>
+                        <th>Total Orders</th>
+                        <th style="text-align: right;">Total Sales</th>
+                        <th style="text-align: right;">Amount Paid</th>
+                        <th style="text-align: right;">Amount Pending</th>
+                        <th style="text-align: center;">Status</th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="9" class="text-center">
+                            Click "Load Report" to view customer sales data
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Customer Details Modal -->
+<div id="customerDetailsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        
+        <div style="padding: 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="modalTitle" style="margin: 0;">Customer Ledger</h2>
+            <button onclick="closeCustomerModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+        </div>
+
+        <div style="padding: 24px;">
+            
+            <!-- Customer Info -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <p style="color: #64748b; margin-bottom: 4px;">Customer Name</p>
+                    <p id="modalCustomerName" style="font-weight: 600; margin: 0;">-</p>
+                </div>
+                <div>
+                    <p style="color: #64748b; margin-bottom: 4px;">Phone</p>
+                    <p id="modalCustomerPhone" style="font-weight: 600; margin: 0;">-</p>
+                </div>
+                <div>
+                    <p style="color: #64748b; margin-bottom: 4px;">City</p>
+                    <p id="modalCustomerCity" style="font-weight: 600; margin: 0;">-</p>
+                </div>
+                <div>
+                    <p style="color: #64748b; margin-bottom: 4px;">GSTIN</p>
+                    <p id="modalCustomerGST" style="font-weight: 600; margin: 0;">-</p>
+                </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <h4 style="margin-top: 24px; margin-bottom: 16px;">Payment Summary</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+                <div style="background: #f0f9ff; padding: 16px; border-radius: 12px; text-align: center;">
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Total Sales</p>
+                    <p id="modalTotalSales" style="font-size: 20px; font-weight: 700; color: #2563eb; margin: 0;">₹0.00</p>
+                </div>
+                <div style="background: #f0fdf4; padding: 16px; border-radius: 12px; text-align: center;">
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Amount Paid</p>
+                    <p id="modalAmountPaid" style="font-size: 20px; font-weight: 700; color: #10b981; margin: 0;">₹0.00</p>
+                </div>
+                <div style="background: #fffbeb; padding: 16px; border-radius: 12px; text-align: center;">
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Amount Pending</p>
+                    <p id="modalAmountPending" style="font-size: 20px; font-weight: 700; color: #f59e0b; margin: 0;">₹0.00</p>
+                </div>
+                <div style="background: #faf5ff; padding: 16px; border-radius: 12px; text-align: center;">
+                    <p style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Balance</p>
+                    <p id="modalBalance" style="font-size: 20px; font-weight: 700; color: #8b5cf6; margin: 0;">₹0.00</p>
+                </div>
+            </div>
+
+            <!-- Add Payment Section -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; color: white;">
+                <h4 style="margin-top: 0; margin-bottom: 16px; color: white;">💳 Record Payment</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: flex-end;">
+                    <div>
+                        <label style="display: block; font-size: 13px; margin-bottom: 6px; opacity: 0.9;">Payment Amount (₹)</label>
+                        <input type="number" id="newPaymentAmount" placeholder="Enter amount" style="width: 100%; padding: 10px 12px; border: none; border-radius: 8px; font-size: 14px;" min="0" step="0.01">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; margin-bottom: 6px; opacity: 0.9;">Payment Date</label>
+                        <input type="date" id="newPaymentDate" style="width: 100%; padding: 10px 12px; border: none; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    <button onclick="recordPayment()" style="background: white; color: #667eea; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.transform='scale(1.05)'" onmouseout="this.transform='scale(1)'">
+                        Add Payment
+                    </button>
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 13px;">
+                    <p style="margin: 0 0 8px 0;">After payment:</p>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                        <div>📊 New Paid: <span id="calcNewPaid" style="font-weight: 600;">₹0.00</span></div>
+                        <div>⏳ New Pending: <span id="calcNewPending" style="font-weight: 600;">₹0.00</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders/Invoices Table -->
+            <h4 style="margin-top: 24px; margin-bottom: 16px;">Order Details</h4>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th style="text-align: right;">Amount</th>
+                        <th style="text-align: right;">Paid</th>
+                        <th style="text-align: right;">Pending</th>
+                        <th style="text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="modalOrdersTable">
+                    <tr>
+                        <td colspan="6" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+
+        <div style="padding: 16px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+            <button onclick="closeCustomerModal()" class="btn" style="background: #e2e8f0; color: #475569;">Close</button>
+            <button onclick="downloadCustomerLedgerPDF()" class="btn btn-primary">
+                <span style="margin-right: 8px;">📄</span> Download PDF
+            </button>
+            <button onclick="shareOnWhatsApp()" class="btn" style="background: #10b981; color: white;">
+                <span style="margin-right: 8px;">💬</span> Share WhatsApp
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ===== TAB SWITCHING =====
+function switchTab(tabName) {
+    // Hide all tabs
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    
+    // Remove active class from all buttons
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+    
+    // Load data for customer sales tab
+    if (tabName === 'customer-sales') {
+        loadCustomerSalesReport();
+    }
+}
+
+// ===== CUSTOMER SALES REPORT =====
+let currentCustomerId = null;
+let currentCustomerData = null;
+
+function loadCustomerSalesReport() {
+    const searchTerm = document.getElementById('customerSalesSearch')?.value || '';
+    
+    fetch('/api/sales/customers')
+        .then(r => r.json())
+        .then(customers => {
+            // Filter if search term exists
+            let filtered = customers;
+            if (searchTerm) {
+                filtered = customers.filter(c => 
+                    c.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (c.customer_phone || '').includes(searchTerm)
+                );
+            }
+            
+            renderCustomerSalesTable(filtered);
+            updateCustomerSalesSummary(filtered);
+        })
+        .catch(err => {
+            console.error('Error loading customers:', err);
+            alert('Error loading customer data');
+        });
+}
+
+function updateCustomerSalesSummary(customers) {
+    let totalSales = 0;
+    let totalPaid = 0;
+    let totalPending = 0;
+    
+    customers.forEach(c => {
+        totalSales += parseFloat(c.total_purchases || 0);
+        totalPaid += parseFloat(c.total_paid || 0);
+        totalPending += parseFloat(c.balance || 0);
+    });
+    
+    document.getElementById('customerSalesTotalSales').textContent = totalSales.toFixed(2);
+    document.getElementById('customerSalesTotalPaid').textContent = totalPaid.toFixed(2);
+    document.getElementById('customerSalesTotalPending').textContent = Math.max(totalPending, 0).toFixed(2);
+}
+
+function renderCustomerSalesTable(customers) {
+    const tbody = document.getElementById('customerSalesTable').querySelector('tbody');
+    
+    if (!customers || customers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center">No customers found</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = customers.map(c => {
+        const balance = parseFloat(c.balance || 0);
+        const statusClass = balance > 0.01 ? 'status-pending' : (balance < -0.01 ? 'status-credit' : 'status-cleared');
+        const statusText = balance > 0.01 ? '⚠ Pending' : (balance < -0.01 ? '↻ Credit' : '✓ Cleared');
+        
+        return `
+            <tr onclick="viewCustomerDetails(${c.id})" style="cursor: pointer;">
+                <td><strong>${c.customer_name}</strong></td>
+                <td>${c.customer_phone || '-'}</td>
+                <td>${c.customer_city || '-'}</td>
+                <td style="text-align: center;">${c.invoice_count || 0}</td>
+                <td style="text-align: right;"><strong>₹${parseFloat(c.total_purchases || 0).toFixed(2)}</strong></td>
+                <td style="text-align: right; color: #10b981;">₹${parseFloat(c.total_paid || 0).toFixed(2)}</td>
+                <td style="text-align: right; color: #f59e0b;">₹${Math.abs(balance).toFixed(2)}</td>
+                <td style="text-align: center;">
+                    <span style="background: ${balance > 0.01 ? '#fee2e2' : (balance < -0.01 ? '#fef3c7' : '#dcfce7')}; color: ${balance > 0.01 ? '#991b1b' : (balance < -0.01 ? '#92400e' : '#166534')}; padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600;">
+                        ${statusText}
+                    </span>
+                </td>
+                <td style="text-align: center;">
+                    <button onclick="event.stopPropagation(); downloadCustomerLedgerPDF(${c.id})" class="btn" style="background: none; border: none; color: #2563eb; cursor: pointer; padding: 4px 8px; font-size: 14px;">📄 PDF</button>
+                    <button onclick="event.stopPropagation(); shareCustomerWhatsApp(${c.id})" class="btn" style="background: none; border: none; color: #10b981; cursor: pointer; padding: 4px 8px; font-size: 14px;">💬 Share</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updatePaymentCalculations() {
+    const currentPaid = currentCustomerData ? parseFloat(currentCustomerData.total_paid) : 0;
+    const totalSales = currentCustomerData ? parseFloat(currentCustomerData.total_purchases) : 0;
+    const newPaymentAmount = parseFloat(document.getElementById('newPaymentAmount').value) || 0;
+    
+    const newPaid = currentPaid + newPaymentAmount;
+    const newPending = Math.max(totalSales - newPaid, 0);
+    
+    document.getElementById('calcNewPaid').textContent = '₹' + newPaid.toFixed(2);
+    document.getElementById('calcNewPending').textContent = '₹' + newPending.toFixed(2);
+}
+
+function recordPayment() {
+    const amount = parseFloat(document.getElementById('newPaymentAmount').value);
+    const date = document.getElementById('newPaymentDate').value;
+    
+    if (!amount || amount <= 0) {
+        alert('Please enter a valid payment amount');
+        return;
+    }
+    
+    if (!date) {
+        alert('Please select a payment date');
+        return;
+    }
+    
+    if (!currentCustomerId) {
+        alert('No customer selected');
+        return;
+    }
+    
+    // Send payment to backend
+    fetch(`/api/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            customer_id: currentCustomerId,
+            amount: amount,
+            payment_date: date,
+            payment_method: 'Cash'
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            alert('✓ Payment recorded successfully!');
+            // Reload customer details
+            viewCustomerDetails(currentCustomerId);
+            // Clear inputs
+            document.getElementById('newPaymentAmount').value = '';
+            document.getElementById('newPaymentDate').value = '';
+        }
+    })
+    .catch(err => {
+        console.error('Error recording payment:', err);
+        alert('Error recording payment');
+    });
+}
+
+function viewCustomerDetails(customerId) {
+    fetch(`/api/sales/customer/${customerId}/ledger`)
+        .then(r => r.json())
+        .then(data => {
+            currentCustomerId = customerId;
+            currentCustomerData = data;
+            
+            // Populate modal
+            document.getElementById('modalTitle').textContent = `📊 Ledger: ${data.customer.customer_name}`;
+            document.getElementById('modalCustomerName').textContent = data.customer.customer_name;
+            document.getElementById('modalCustomerPhone').textContent = data.customer.customer_phone || '-';
+            document.getElementById('modalCustomerCity').textContent = data.customer.customer_city || '-';
+            document.getElementById('modalCustomerGST').textContent = data.customer.gst_number || 'Unregistered';
+            
+            document.getElementById('modalTotalSales').textContent = '₹' + data.total_purchases.toFixed(2);
+            document.getElementById('modalAmountPaid').textContent = '₹' + data.total_paid.toFixed(2);
+            document.getElementById('modalAmountPending').textContent = '₹' + Math.max(data.balance, 0).toFixed(2);
+            document.getElementById('modalBalance').textContent = '₹' + data.balance.toFixed(2);
+            
+            // Reset payment inputs
+            document.getElementById('newPaymentAmount').value = '';
+            document.getElementById('newPaymentDate').value = new Date().toISOString().split('T')[0];
+            updatePaymentCalculations();
+            
+            // Populate orders table
+            const tbody = document.getElementById('modalOrdersTable');
+            if (data.ledger && data.ledger.length > 0) {
+                tbody.innerHTML = data.ledger.map(entry => `
+                    <tr>
+                        <td><strong>${entry.invoice_number}</strong></td>
+                        <td>${new Date(entry.date).toLocaleDateString('en-IN')}</td>
+                        <td style="text-align: right;">₹${entry.debit.toFixed(2)}</td>
+                        <td style="text-align: right; color: #10b981;">₹${entry.credit.toFixed(2)}</td>
+                        <td style="text-align: right; color: #f59e0b;">₹${entry.balance.toFixed(2)}</td>
+                        <td style="text-align: center;">
+                            <span style="background: #f0fdf4; color: #166534; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                                ✓ Recorded
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No transactions found</td></tr>';
+            }
+            
+            // Show modal
+            document.getElementById('customerDetailsModal').style.display = 'block';
+        })
+        .catch(err => {
+            console.error('Error loading customer details:', err);
+            alert('Error loading customer details');
+        });
+}
+
+function closeCustomerModal() {
+    document.getElementById('customerDetailsModal').style.display = 'none';
+    currentCustomerId = null;
+    currentCustomerData = null;
+}
+
+function downloadCustomerLedgerPDF(customerId) {
+    const id = customerId || currentCustomerId;
+    if (!id) return;
+    window.location.href = `/api/sales/customer/${id}/ledger/pdf`;
+}
+
+function shareCustomerWhatsApp(customerId) {
+    const id = customerId || currentCustomerId;
+    if (!id) return;
+    window.location.href = `/api/sales/customer/${id}/whatsapp-share`;
+}
+
+function shareOnWhatsApp() {
+    shareCustomerWhatsApp(currentCustomerId);
+}
+
+// Close modal when clicking outside
+document.getElementById('customerDetailsModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCustomerModal();
+    }
+});
+
+// Real-time payment calculation
+document.getElementById('newPaymentAmount')?.addEventListener('input', updatePaymentCalculations);
+
+// Initial load for customer report
+document.addEventListener('DOMContentLoaded', function() {
+    // Load customer inventory on page load
+    const customerTableBody = document.getElementById('customerTable')?.querySelector('tbody');
+    if (customerTableBody) {
+        fetch('/api/sales/customers')
+            .then(r => r.json())
+            .then(customers => {
+                customerTableBody.innerHTML = customers.map(c => `
+                    <tr>
+                        <td>${c.customer_name}</td>
+                        <td>${c.customer_phone || '-'}</td>
+                        <td>${c.customer_city || '-'}</td>
+                        <td style="text-align: right;">₹${parseFloat(c.total_purchases || 0).toFixed(2)}</td>
+                        <td style="text-align: right;">₹${parseFloat(c.total_paid || 0).toFixed(2)}</td>
+                        <td style="text-align: right;">₹${Math.abs(parseFloat(c.balance || 0)).toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            })
+            .catch(err => console.error('Error loading customers:', err));
+    }
+});
+</script>
+
+{% endblock %}

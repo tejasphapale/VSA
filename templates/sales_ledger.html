@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+
+{% block title %}Sales & Customer Ledger{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 style="color: #667eea; font-weight: 700;">📊 Sales & Customer Ledger</h1>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="exportAllLedger()"><i class="fas fa-download"></i> Export All</button>
+                    <button class="btn btn-success" onclick="quickPaymentModal()"><i class="fas fa-rupee-sign"></i> Quick Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">💰 Total Sales</h6>
+                    <h3 style="color: #667eea;">₹<span id="totalSales">0.00</span></h3>
+                    <small class="text-muted">This Month</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">⏳ Pending Amount</h6>
+                    <h3 style="color: #f59e0b;">₹<span id="pendingAmount">0.00</span></h3>
+                    <small class="text-muted">Outstanding Balance</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">✅ Collected</h6>
+                    <h3 style="color: #10b981;">₹<span id="collectedAmount">0.00</span></h3>
+                    <small class="text-muted">Total Payments</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">👥 Active Customers</h6>
+                    <h3 style="color: #8b5cf6;"><span id="activeCustomers">0</span></h3>
+                    <small class="text-muted">With Open Transactions</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="searchInput" placeholder="🔍 Search customer by name or phone..." onkeyup="filterCustomers()">
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="filterStatus" onchange="filterCustomers()">
+                                <option value="all">All Customers</option>
+                                <option value="pending">With Pending Balance</option>
+                                <option value="cleared">Accounts Cleared</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📋 Customer Sales Records</h5>
+                </div>
+                <div class="card-body">
+                    <div id="customerListContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3 text-muted">Loading customer records...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Detail Modal -->
+<div class="modal" id="customerDetailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div class="modal-dialog" style="max-width: 900px; margin: 30px auto; background: white; border-radius: 12px;">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                <h5 class="modal-title" id="customerDetailTitle">Customer Ledger</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="closeModal()"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;" id="customerDetailContent">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.customer-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.customer-card:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+    border-color: #667eea;
+}
+
+.customer-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 1rem;
+}
+
+.customer-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.customer-meta {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-top: 0.5rem;
+}
+
+.balance-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.balance-pending {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.balance-cleared {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.customer-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.stat-box {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-top: 0.5rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.btn-sm-icon {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-sm-icon:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #64748b;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+</style>
+
+<script>
+let allCustomers = [];
+
+function loadSalesData() {
+    // Load summary
+    fetch('/api/sales/summary')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('totalSales').textContent = data.total_sales.toFixed(2);
+            document.getElementById('pendingAmount').textContent = data.pending_amount.toFixed(2);
+            document.getElementById('collectedAmount').textContent = data.collected_amount.toFixed(2);
+            document.getElementById('activeCustomers').textContent = data.active_customers;
+        })
+        .catch(err => {
+            console.error('Error loading summary:', err);
+        });
+
+    // Load customers
+    fetch('/api/sales/customers')
+        .then(r => r.json())
+        .then(data => {
+            allCustomers = data;
+            renderCustomers(data);
+        })
+        .catch(err => {
+            console.error('Error loading customers:', err);
+            document.getElementById('customerListContainer').innerHTML = 
+                '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Error loading customer data</p></div>';
+        });
+}
+
+function renderCustomers(customers) {
+    const container = document.getElementById('customerListContainer');
+    
+    if (!customers || customers.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No customer records found</p></div>';
+        return;
+    }
+
+    let html = '';
+    customers.forEach(customer => {
+        const balanceClass = customer.balance > 0 ? 'balance-pending' : 'balance-cleared';
+        const balanceText = customer.balance > 0 ? `₹${customer.balance.toFixed(2)} Pending` : '✓ Cleared';
+        
+        html += `
+            <div class="customer-card" onclick="showCustomerLedger(${customer.id})">
+                <div class="customer-card-header">
+                    <div>
+                        <div class="customer-name">👤 ${customer.customer_name}</div>
+                        <div class="customer-meta">
+                            <i class="fas fa-phone"></i> ${customer.customer_phone || 'N/A'} | 
+                            <i class="fas fa-map-marker-alt"></i> ${customer.customer_city || 'N/A'}
+                        </div>
+                    </div>
+                    <span class="balance-badge ${balanceClass}">${balanceText}</span>
+                </div>
+                <div class="customer-stats">
+                    <div class="stat-box">
+                        <div class="stat-label">💰 Total Purchases</div>
+                        <div class="stat-value">₹${customer.total_purchases.toFixed(2)}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">✅ Total Paid</div>
+                        <div class="stat-value" style="color: #10b981;">₹${customer.total_paid.toFixed(2)}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">⏳ Balance Due</div>
+                        <div class="stat-value" style="color: ${customer.balance > 0 ? '#ef4444' : '#10b981'};">₹${customer.balance.toFixed(2)}</div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-sm-icon" onclick="event.stopPropagation(); downloadCustomerPDF(${customer.id});" title="Download PDF">
+                        <i class="fas fa-download"></i> PDF
+                    </button>
+                    <button class="btn-sm-icon" onclick="event.stopPropagation(); shareViaWhatsApp(${customer.id});" title="Share via WhatsApp">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                    <button class="btn-sm-icon" onclick="event.stopPropagation(); printLedger(${customer.id});" title="Print">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function filterCustomers() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const filter = document.getElementById('filterStatus').value;
+    
+    let filtered = allCustomers.filter(c => {
+        const matchesSearch = c.customer_name.toLowerCase().includes(search) || 
+                            (c.customer_phone && c.customer_phone.includes(search));
+        const matchesFilter = filter === 'all' || 
+                            (filter === 'pending' && c.balance > 0) ||
+                            (filter === 'cleared' && c.balance <= 0);
+        return matchesSearch && matchesFilter;
+    });
+
+    renderCustomers(filtered);
+}
+
+function showCustomerLedger(customerId) {
+    fetch(`/api/sales/customer/${customerId}/ledger`)
+        .then(r => r.json())
+        .then(data => {
+            renderLedgerModal(data);
+            document.getElementById('customerDetailModal').style.display = 'block';
+        })
+        .catch(err => {
+            console.error('Error loading ledger:', err);
+            alert('Error loading customer ledger');
+        });
+}
+
+function renderLedgerModal(data) {
+    const customer = data.customer;
+    const ledger = data.ledger;
+    const totalPurchases = data.total_purchases;
+    const totalPaid = data.total_paid;
+    const balance = data.balance;
+
+    document.getElementById('customerDetailTitle').textContent = `📋 Ledger: ${customer.customer_name}`;
+    
+    let html = `
+        <div style="margin-bottom: 2rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                <div style="background: #e6f2ff; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">💰 Total Purchases</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #667eea;">₹${totalPurchases.toFixed(2)}</div>
+                </div>
+                <div style="background: #ecfdf5; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">✅ Total Paid</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">₹${totalPaid.toFixed(2)}</div>
+                </div>
+                <div style="background: ${balance > 0 ? '#fee2e2' : '#ecfdf5'}; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">⏳ Balance Due</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: ${balance > 0 ? '#ef4444' : '#10b981'};">₹${balance.toFixed(2)}</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h6 style="margin-bottom: 1rem; font-weight: 600; color: #2c3e50;">📤 Export & Share</h6>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-sm btn-primary" onclick="downloadCustomerPDF(${customer.id})">
+                        <i class="fas fa-download"></i> Download PDF
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="shareViaWhatsApp(${customer.id})">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="printLedger(${customer.id})">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="quickPayment(${customer.id})">
+                        <i class="fas fa-rupee-sign"></i> Record Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <h6 style="margin-bottom: 1rem; font-weight: 600; color: #2c3e50;">📊 Transaction History</h6>
+        <div style="overflow-x: auto;">
+            <table class="table table-hover table-sm">
+                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <tr>
+                        <th style="color: white;">📅 Date</th>
+                        <th style="color: white;">📝 Type</th>
+                        <th style="color: white;">Description</th>
+                        <th style="color: white; text-align: right;">Debit (₹)</th>
+                        <th style="color: white; text-align: right;">Credit (₹)</th>
+                        <th style="color: white; text-align: right;">Balance (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    if (ledger.length === 0) {
+        html += `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">No transactions found</td></tr>`;
+    } else {
+        ledger.forEach(entry => {
+            html += `
+                <tr>
+                    <td>${entry.date}</td>
+                    <td><strong>${entry.type === 'Invoice' ? '📋' : '💳'} ${entry.type}</strong></td>
+                    <td>${entry.description}</td>
+                    <td style="text-align: right;">${entry.debit > 0 ? '₹' + entry.debit.toFixed(2) : '—'}</td>
+                    <td style="text-align: right; color: #10b981; font-weight: 600;">${entry.credit > 0 ? '₹' + entry.credit.toFixed(2) : '—'}</td>
+                    <td style="text-align: right; font-weight: 600;">₹${entry.balance.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+    }
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    document.getElementById('customerDetailContent').innerHTML = html;
+}
+
+function downloadCustomerPDF(customerId) {
+    window.location.href = `/api/sales/customer/${customerId}/ledger/pdf`;
+}
+
+function shareViaWhatsApp(customerId) {
+    fetch(`/api/sales/customer/${customerId}/whatsapp-share`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Opening WhatsApp...');
+            window.open(data.whatsapp_url, '_blank');
+            // Also trigger PDF download
+            setTimeout(() => {
+                window.location.href = `/api/sales/customer/${customerId}/ledger/pdf`;
+            }, 500);
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Error sharing via WhatsApp');
+    });
+}
+
+function printLedger(customerId) {
+    fetch(`/api/sales/customer/${customerId}/ledger`)
+    .then(r => r.json())
+    .then(data => {
+        const printWindow = window.open('', '', 'height=700,width=900');
+        let printContent = `<html><head><title>Customer Ledger</title>
+        <style>
+            body { font-family: Arial; margin: 20px; }
+            h2 { color: #667eea; }
+            .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 20px 0; }
+            .summary-item { padding: 15px; background: #f0f0f0; border-radius: 8px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { background: #667eea; color: white; padding: 10px; }
+            td { padding: 8px; border-bottom: 1px solid #ddd; }
+            tr:nth-child(even) { background: #f9f9f9; }
+        </style></head><body>`;
+        
+        printContent += `<h2>📋 Customer Ledger - ${data.customer.customer_name}</h2>`;
+        printContent += `<div class="summary">
+            <div class="summary-item"><strong>Purchases:</strong> ₹${data.total_purchases.toFixed(2)}</div>
+            <div class="summary-item"><strong>Paid:</strong> ₹${data.total_paid.toFixed(2)}</div>
+            <div class="summary-item"><strong>Balance:</strong> ₹${data.balance.toFixed(2)}</div>
+        </div>`;
+        
+        printContent += `<table>
+            <tr>
+                <th>Date</th><th>Type</th><th>Description</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Credit</th><th style="text-align:right;">Balance</th>
+            </tr>`;
+        
+        data.ledger.forEach(entry => {
+            printContent += `<tr>
+                <td>${entry.date}</td>
+                <td>${entry.type}</td>
+                <td>${entry.description}</td>
+                <td style="text-align:right;">${entry.debit > 0 ? '₹' + entry.debit.toFixed(2) : '—'}</td>
+                <td style="text-align:right;">${entry.credit > 0 ? '₹' + entry.credit.toFixed(2) : '—'}</td>
+                <td style="text-align:right;"><strong>₹${entry.balance.toFixed(2)}</strong></td>
+            </tr>`;
+        });
+        
+        printContent += `</table></body></html>`;
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        setTimeout(() => printWindow.print(), 250);
+    });
+}
+
+function quickPayment(customerId) {
+    const amount = prompt('Enter payment amount:');
+    if (!amount) return;
+    
+    fetch('/api/payments', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            amount: parseFloat(amount),
+            payment_method: 'Cash',
+            payment_date: new Date().toISOString().split('T')[0],
+            invoice_id: 1  // Would need to select actual invoice
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Payment recorded successfully!');
+            loadSalesData();
+            closeModal();
+        }
+    });
+}
+
+function exportAllLedger() {
+    alert('📥 Exporting all ledgers... (Feature coming soon)');
+}
+
+function quickPaymentModal() {
+    alert('💳 Quick payment feature coming soon');
+}
+
+function closeModal() {
+    document.getElementById('customerDetailModal').style.display = 'none';
+}
+
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('customerDetailModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+});
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', loadSalesData);
+</script>
+
+{% endblock %}

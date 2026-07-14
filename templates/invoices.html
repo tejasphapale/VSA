@@ -1,0 +1,1252 @@
+{% extends "base.html" %}
+{% block title %}Invoices - Shop Billing{% endblock %}
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ── Base overrides for DM Sans ─── */
+body, .input, .btn, select, input, textarea {
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── CSS Variables ─── */
+:root {
+  --ink:        #0d0f14;
+  --ink-2:      #3a3f4e;
+  --ink-3:      #7a8096;
+  --line:       #e8eaef;
+  --line-2:     #f2f4f8;
+  --surface:    #ffffff;
+  --surface-2:  #f7f8fb;
+  --accent:     #2563eb;
+  --accent-dim: #dbeafe;
+  --accent-glow:rgba(37,99,235,0.15);
+  --success:    #059669;
+  --success-dim:#d1fae5;
+  --warn:       #d97706;
+  --warn-dim:   #fef3c7;
+  --danger:     #dc2626;
+  --danger-dim: #fee2e2;
+  --radius:     10px;
+  --radius-lg:  16px;
+  --shadow:     0 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.08);
+  --shadow-md:  0 8px 24px rgba(0,0,0,0.09), 0 0 1px rgba(0,0,0,0.06);
+  --shadow-lg:  0 24px 48px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.06);
+}
+
+/* ── Invoice Page Layout ─── */
+.page-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 0 2rem; }
+.page-header h1 { font-size: 2rem; font-weight: 700; margin: 0; }
+.page-header p { margin: 0.25rem 0 0 0; color: #999; }
+.container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
+.card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 2rem; }
+.card-body { padding: 1.5rem; }
+
+.controls { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+.input { padding: 0.625rem 0.875rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; }
+.input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+.btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; }
+.btn-primary { background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: white; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3); }
+.btn-primary:hover { background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-secondary { background: white; border: 2px solid #e5e7eb; color: #374151; }
+.btn-secondary:hover { background: #f3f4f6; border-color: #d1d5db; }
+.btn-icon { background: none; border: none; padding: 0.5rem; cursor: pointer; color: #64748b; border-radius: 6px; transition: all 0.2s; }
+.btn-icon:hover { background: #f8fafc; color: #333; }
+.btn-icon.danger:hover { background: #fee2e2; color: #ef4444; }
+
+.table-responsive { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.table th { padding: 1rem; text-align: left; font-weight: 600; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #64748b; }
+.table td { padding: 1rem; border-bottom: 1px solid #e2e8f0; }
+.table tbody tr:hover { background: #f8fafc; }
+
+.badge { display: inline-block; padding: 0.375rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+.badge-success { background: #d1fae5; color: #065f46; }
+.badge-warning { background: #fef3c7; color: #b45309; }
+.badge-info { background: #e0f2fe; color: #0c2d6b; }
+
+/* ── Create Invoice Modal (original, unchanged) ─── */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow-y: auto; animation: fadeIn 0.2s ease; }
+.modal.active { display: flex; align-items: center; justify-content: center; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-content { background: white; border-radius: 16px; width: 95%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.25); animation: slideUp 0.3s ease; }
+.modal-header { padding: 2rem 2.5rem; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; display: flex; justify-content: space-between; align-items: flex-start; }
+.modal-header h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: white; }
+.modal-close { background: rgba(255,255,255,0.2); border: none; font-size: 1.8rem; color: white; cursor: pointer; padding: 0.5rem; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.modal-close:hover { background: rgba(255,255,255,0.3); transform: rotate(90deg); }
+.modal-body { padding: 2rem 2.5rem; }
+
+.form-group { margin-bottom: 1.25rem; }
+.form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; font-size: 0.9rem; color: #374151; }
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+
+.invoice-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+.invoice-item .input { padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+.invoice-item .input[type="number"] { max-width: 120px; }
+
+.summary-box { background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 2px solid #e5e7eb; border-radius: 10px; padding: 1.5rem; margin: 1.75rem 0; }
+.summary-row { display: flex; justify-content: space-between; padding: 0.6rem 0; font-size: 0.95rem; color: #4b5563; }
+.summary-row strong { font-weight: 600; color: #1f2937; }
+.summary-row.total { border-top: 2px solid #e5e7eb; padding-top: 1rem; font-weight: 700; font-size: 1.15rem; color: #4f46e5; }
+.form-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid #f0f0f0; }
+
+.empty-state { text-align: center; padding: 3rem; color: #999; }
+
+/* ── Toast ─── */
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 0.875rem 1.5rem; border-radius: 10px; color: white; font-weight: 600; font-size: 0.875rem; transform: translateY(200px); opacity: 0; transition: all 0.3s cubic-bezier(0.175,0.885,0.32,1.275); z-index: 9999; max-width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-success { background: #059669; }
+.toast-error { background: #dc2626; }
+
+/* ════════════════════════════════════════════════════════════
+   EDIT INVOICE MODAL — New Design
+════════════════════════════════════════════════════════════ */
+.edit-modal-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(10, 12, 20, 0.55);
+  backdrop-filter: blur(6px);
+  align-items: center; justify-content: center;
+  padding: 1.5rem;
+  animation: overlayIn 0.25s ease;
+}
+.edit-modal-overlay.active { display: flex; }
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+.edit-modal {
+  width: 100%; max-width: 980px; max-height: 92vh;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: modalIn 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes modalIn {
+  from { transform: translateY(24px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Top bar */
+.edit-modal-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.edit-modal-topbar-left { display: flex; flex-direction: column; gap: 2px; }
+.edit-modal-topbar-left h2 { font-size: 1.15rem; font-weight: 700; color: var(--ink); letter-spacing: -0.3px; }
+.edit-modal-topbar-left span { font-size: 0.78rem; color: var(--ink-3); font-family: 'DM Mono', monospace; }
+.edit-modal-close-btn {
+  width: 34px; height: 34px;
+  background: var(--line-2); border: none; border-radius: 8px;
+  color: var(--ink-3); cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.edit-modal-close-btn:hover { background: var(--danger-dim); color: var(--danger); }
+
+/* Tabs */
+.edit-modal-tabs {
+  display: flex; background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
+}
+.edit-modal-tabs::-webkit-scrollbar { display: none; }
+.edit-tab-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.825rem; font-weight: 600; color: var(--ink-3);
+  cursor: pointer; border-bottom: 2.5px solid transparent;
+  white-space: nowrap; transition: all 0.2s; user-select: none;
+}
+.edit-tab-item:hover { color: var(--ink-2); background: rgba(0,0,0,0.025); }
+.edit-tab-item.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+.edit-tab-item.done { color: var(--success); }
+.edit-tab-item.done .edit-tab-num { background: var(--success); color: white; }
+.edit-tab-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--line); color: var(--ink-3);
+  font-size: 0.7rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+}
+.edit-tab-item.active .edit-tab-num { background: var(--accent); color: white; }
+
+/* Body / pages */
+.edit-modal-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.edit-modal-page { display: none; flex: 1; overflow-y: auto; padding: 1.75rem; }
+.edit-modal-page.active { display: block; animation: editPageIn 0.2s ease; }
+@keyframes editPageIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+.edit-modal-page::-webkit-scrollbar { width: 5px; }
+.edit-modal-page::-webkit-scrollbar-track { background: transparent; }
+.edit-modal-page::-webkit-scrollbar-thumb { background: var(--line); border-radius: 9px; }
+
+/* Field controls */
+.ef-group { margin-bottom: 1.25rem; }
+.ef-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--ink-3); margin-bottom: 0.375rem; letter-spacing: 0.3px; text-transform: uppercase; }
+.ef-input {
+  width: 100%; padding: 0.65rem 0.875rem;
+  border: 1.5px solid var(--line); border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink);
+  background: var(--surface); transition: all 0.15s; appearance: none;
+}
+.ef-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.ef-input:hover:not(:focus) { border-color: #c5c9d5; }
+.ef-input[readonly], .ef-input[disabled] { background: var(--surface-2); color: var(--ink-3); cursor: not-allowed; }
+.ef-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.ef-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+/* Summary card */
+.edit-summary-card { background: var(--surface-2); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 1.25rem; margin-top: 1.25rem; }
+.edit-summary-line { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0; font-size: 0.875rem; color: var(--ink-2); border-bottom: 1px solid var(--line); }
+.edit-summary-line:last-child { border-bottom: none; }
+.edit-summary-line.total { padding-top: 0.875rem; margin-top: 0.375rem; font-size: 1.05rem; font-weight: 700; color: var(--ink); border-top: 2px solid var(--line); border-bottom: none; }
+.edit-summary-line.total .eval { color: var(--accent); font-size: 1.15rem; }
+.edit-summary-line .eval { font-weight: 600; color: var(--ink); font-family: 'DM Mono', monospace; }
+.elbl { display: flex; align-items: center; gap: 0.4rem; }
+.elbl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.elbl-dot.blue { background: var(--accent); }
+.elbl-dot.green { background: var(--success); }
+.elbl-dot.orange { background: var(--warn); }
+
+/* Product card (edit step 2) */
+.edit-product-card { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 0.75rem; transition: border-color 0.15s, box-shadow 0.15s; }
+.edit-product-card:hover { border-color: #c5c9d5; box-shadow: var(--shadow); }
+.edit-product-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.875rem; }
+.edit-product-card-name { font-weight: 600; color: var(--ink); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+.edit-product-card-price { font-size: 0.875rem; font-weight: 700; color: var(--accent); font-family: 'DM Mono', monospace; }
+.edit-product-card-fields { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+/* Add product panel */
+.edit-add-panel { background: var(--surface-2); border: 1.5px dashed var(--line); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+.edit-add-panel-title { font-size: 0.85rem; font-weight: 700; color: var(--ink-2); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.edit-added-tag { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--success-dim); color: var(--success); font-size: 0.78rem; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 6px; margin: 0.25rem; }
+
+/* Section title */
+.edit-section-title { font-size: 0.95rem; font-weight: 700; color: var(--ink); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.edit-section-title::after { content: ''; flex: 1; height: 1px; background: var(--line); margin-left: 0.5rem; }
+
+/* Review blocks */
+.edit-review-block { background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius); margin-bottom: 1rem; overflow: hidden; }
+.edit-review-block-header { background: var(--surface-2); padding: 0.75rem 1.25rem; font-size: 0.8rem; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 0.5rem; }
+.edit-review-block-body { padding: 1rem 1.25rem; }
+.edit-review-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; font-size: 0.875rem; border-bottom: 1px solid var(--line-2); }
+.edit-review-row:last-child { border-bottom: none; }
+.edit-review-row .rkey { color: var(--ink-3); }
+.edit-review-row .rval { font-weight: 600; color: var(--ink); font-family: 'DM Mono', monospace; font-size: 0.825rem; }
+.edit-review-row.total-row { border-top: 2px solid var(--line); margin-top: 0.5rem; padding-top: 0.75rem; font-size: 1rem; border-bottom: none; }
+.edit-review-row.total-row .rkey { color: var(--ink); font-weight: 700; }
+.edit-review-row.total-row .rval { color: var(--accent); font-size: 1.1rem; }
+
+/* Status badges */
+.s-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.28rem 0.65rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+.s-badge.draft  { background: var(--line-2);    color: var(--ink-3); }
+.s-badge.final  { background: var(--accent-dim); color: var(--accent); }
+.s-badge.paid   { background: var(--success-dim); color: var(--success); }
+.s-badge.unpaid { background: var(--danger-dim); color: var,--danger); }
+.s-badge.partial{ background: var(--warn-dim);  color: var(--warn); }
+
+/* Status select arrow */
+.ef-select-wrap { position: relative; }
+.ef-select-wrap::after { content: '▾'; position: absolute; right: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--ink-3); pointer-events: none; font-size: 0.75rem; }
+
+/* Navigation bar */
+.edit-modal-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 1.75rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface); flex-shrink: 0;
+}
+.edit-nav-dots { display: flex; gap: 0.35rem; align-items: center; }
+.edit-nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: all 0.2s; }
+.edit-nav-dot.active { background: var(--accent); width: 18px; border-radius: 4px; }
+.edit-nav-dot.done { background: var(--success); }
+.edit-nav-btns { display: flex; gap: 0.75rem; }
+
+/* Edit modal buttons */
+.ebtn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.25rem; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.ebtn-ghost { background: transparent; color: var(--ink-3); border: 1.5px solid var(--line); }
+.ebtn-ghost:hover { background: var(--surface-2); color: var(--ink-2); }
+.ebtn-primary { background: var(--accent); color: white; box-shadow: 0 1px 3px rgba(37,99,235,0.25); }
+.ebtn-primary:hover { background: #1d4ed8; box-shadow: 0 4px 12px rgba(37,99,235,0.3); transform: translateY(-1px); }
+.ebtn-primary:active { transform: translateY(0); }
+.ebtn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.ebtn-success { background: var(--success); color: white; box-shadow: 0 1px 3px rgba(5,150,105,0.25); }
+.ebtn-success:hover { background: #047857; box-shadow: 0 4px 12px rgba(5,150,105,0.3); transform: translateY(-1px); }
+
+/* Info chips */
+.info-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 0.3rem 0.65rem; font-size: 0.775rem; font-weight: 500; color: var(--ink-2); }
+.info-chip i { font-size: 0.7rem; color: var(--ink-3); }
+
+@media (max-width: 768px) {
+  .page-header { flex-direction: column; align-items: flex-start; }
+  .controls { flex-direction: column; }
+  .controls input, .controls select { width: 100%; }
+  .invoice-item { flex-direction: column; align-items: stretch; }
+  .invoice-item .input { max-width: 100%; }
+  .ef-grid, .ef-grid-3 { grid-template-columns: 1fr; }
+  .edit-product-card-fields { grid-template-columns: 1fr 1fr; }
+}
+</style>
+
+<!-- ══ PAGE ══════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <div>
+    <h1>📋 Invoices</h1>
+    <p>Manage and track all invoices</p>
+  </div>
+  <button class="btn btn-primary" onclick="openModal()" style="white-space: nowrap;">
+    <i class="fas fa-plus"></i> Create Invoice
+  </button>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-body">
+      <div class="controls">
+        <input type="text" id="search" class="input" placeholder="Search by invoice number or customer..." style="flex: 1; min-width: 250px;">
+        <select id="statusFilter" class="input" style="width: 180px;">
+          <option value="">All Statuses</option>
+          <option value="Finalized">Finalized</option>
+          <option value="Draft">Draft</option>
+        </select>
+        <button class="btn btn-secondary" onclick="load()"><i class="fas fa-search"></i> Search</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>PO Number</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr>
+              <td colspan="8" style="text-align: center; color: #999; padding: 2rem;">
+                <i class="fas fa-spinner fa-spin"></i> Loading invoices...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CREATE INVOICE MODAL (original, unchanged) ══════════════ -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Create New Invoice</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form onsubmit="save(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Customer *</label>
+            <select id="customerId" class="input" required>
+              <option value="">Select customer...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Invoice Date *</label>
+            <input type="date" id="invoiceDate" class="input" required>
+          </div>
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select id="paymentMethod" class="input">
+              <option>Cash</option>
+              <option>Card</option>
+              <option>UPI</option>
+              <option>Bank Transfer</option>
+              <option>Credit</option>
+            </select>
+          </div>
+        </div>
+        <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; font-weight: 600;">Items</h3>
+        <div id="itemsContainer"></div>
+        <button type="button" class="btn btn-secondary" onclick="addItem()" style="margin-bottom: 1.5rem;">
+          <i class="fas fa-plus"></i> Add Item
+        </button>
+        <div class="summary-box">
+          <div class="summary-row">
+            <span>Subtotal:</span>
+            <strong>₹<span id="subtotal">0.00</span></strong>
+          </div>
+          <div class="summary-row">
+            <span>GST:</span>
+            <strong>₹<span id="gst">0.00</span></strong>
+          </div>
+          <div class="form-group" style="margin: 0.5rem 0;">
+            <label style="font-size: 0.85rem;">🚚 Transport Charges (₹)</label>
+            <input type="number" id="transportCharges" class="input" step="0.01" min="0" value="0" oninput="updateSummary()">
+          </div>
+          <div class="form-group" style="margin: 0.5rem 0;">
+            <label style="font-size: 0.85rem;">💰 Discount (₹)</label>
+            <input type="number" id="discount" class="input" step="0.01" min="0" value="0" oninput="updateSummary()">
+          </div>
+          <div class="summary-row total">
+            <span>Total:</span>
+            <strong>₹<span id="total">0.00</span></strong>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Invoice
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EDIT INVOICE MODAL — New Design ════════════════════════ -->
+<div class="edit-modal-overlay" id="editModal" onclick="handleEditOverlayClick(event)">
+  <div class="edit-modal" onclick="event.stopPropagation()">
+
+    <!-- Top Bar -->
+    <div class="edit-modal-topbar">
+      <div class="edit-modal-topbar-left">
+        <h2>Edit Invoice</h2>
+        <span id="editModalInvoiceNum">#— &nbsp;·&nbsp; —</span>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <span class="s-badge draft" id="editStatusChip"><i class="fas fa-circle" style="font-size:0.45rem;"></i> Draft</span>
+        <button class="edit-modal-close-btn" onclick="closeEditModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step Tabs -->
+    <div class="edit-modal-tabs" id="editModalTabs">
+      <div class="edit-tab-item active" data-step="0" onclick="switchEditStep(0)">
+        <span class="edit-tab-num">1</span> Invoice Details
+      </div>
+      <div class="edit-tab-item" data-step="1" onclick="switchEditStep(1)">
+        <span class="edit-tab-num">2</span> Product Details
+      </div>
+      <div class="edit-tab-item" data-step="2" onclick="switchEditStep(2)">
+        <span class="edit-tab-num">3</span> Add Products
+      </div>
+      <div class="edit-tab-item" data-step="3" onclick="switchEditStep(3)">
+        <span class="edit-tab-num">4</span> Final Review
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="edit-modal-body">
+
+      <!-- Step 1: Invoice Details -->
+      <div class="edit-modal-page active" id="editStep0">
+        <div class="ef-grid" style="margin-bottom:1rem;">
+          <div class="ef-group">
+            <label class="ef-label">Invoice Date</label>
+            <input type="date" id="editInvoiceDate" class="ef-input">
+          </div>
+          <div class="ef-group">
+            <label class="ef-label">PO Number</label>
+            <input type="text" id="editPoNumber" class="ef-input" placeholder="e.g. 2627574">
+          </div>
+        </div>
+        <div class="ef-grid" style="margin-bottom:1rem;">
+          <div class="ef-group">
+            <label class="ef-label">Payment Method</label>
+            <div class="ef-select-wrap">
+              <select id="editPaymentMethod" class="ef-input" style="padding-right:2rem;">
+                <option value="Cash">💵  Cash</option>
+                <option value="Card">💳  Card</option>
+                <option value="UPI">📱  UPI</option>
+                <option value="Bank Transfer">🏦  Bank Transfer</option>
+                <option value="Credit">📋  Credit</option>
+              </select>
+            </div>
+          </div>
+          <div class="ef-group">
+            <label class="ef-label">Invoice Status</label>
+            <div class="ef-select-wrap">
+              <select id="editStatus" class="ef-input" style="padding-right:2rem;" onchange="updateEditStatusChip()">
+                <option value="Draft">📝  Draft</option>
+                <option value="Finalized">✅  Finalized</option>
+                <option value="Cancelled">❌  Cancelled</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="ef-grid">
+          <div class="ef-group">
+            <label class="ef-label">Payment Status</label>
+            <div class="ef-select-wrap">
+              <select id="editPaymentStatus" class="ef-input" style="padding-right:2rem;">
+                <option value="Unpaid">🔴  Unpaid</option>
+                <option value="Partial">🟡  Partial</option>
+                <option value="Paid">🟢  Paid</option>
+              </select>
+            </div>
+          </div>
+          <div class="ef-group">
+            <label class="ef-label">Discount (₹)</label>
+            <input type="number" id="editDiscount" class="ef-input" step="0.01" min="0" value="0" oninput="onEditDiscountChange()">
+          </div>
+        </div>
+        <!-- Financial summary -->
+        <div class="edit-summary-card">
+          <div class="edit-summary-line">
+            <span class="elbl"><span class="elbl-dot blue"></span>Subtotal</span>
+            <span class="eval" id="editS1Subtotal">₹0.00</span>
+          </div>
+          <div class="edit-summary-line">
+            <span class="elbl"><span class="elbl-dot green"></span>GST (Tax)</span>
+            <span class="eval" id="editS1Tax">₹0.00</span>
+          </div>
+          <div class="edit-summary-line">
+            <span class="elbl"><span class="elbl-dot orange"></span>Discount</span>
+            <span class="eval" id="editDiscountDisplay" style="color:var(--warn);">- ₹0.00</span>
+          </div>
+          <div class="edit-summary-line total">
+            <span>Total Amount</span>
+            <span class="eval" id="editTotalDisplay">₹0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Product Details -->
+      <div class="edit-modal-page" id="editStep1">
+        <p style="font-size:0.82rem; color:var(--ink-3); margin-bottom:1.25rem;">
+          Modify quantities and prices for existing products on this invoice.
+        </p>
+        <div id="editProductsList"></div>
+        <div id="editProductsMeta" style="margin-top:1rem; padding:0.875rem 1rem; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-size:0.825rem; color:var(--ink-3);" id="editProductsCount">0 products on this invoice</span>
+          <div style="display:flex; gap:0.5rem;" id="editProductsChips"></div>
+        </div>
+      </div>
+
+      <!-- Step 3: Add Products -->
+      <div class="edit-modal-page" id="editStep2">
+        <div class="edit-add-panel">
+          <div class="edit-add-panel-title"><i class="fas fa-plus-circle" style="color:var(--accent);"></i> &nbsp;Add a product</div>
+          <div style="margin-bottom:1rem;">
+            <div class="ef-group" style="margin:0 0 1rem 0;">
+              <label class="ef-label">Select Product</label>
+              <div class="ef-select-wrap">
+                <select id="addProductSelect" class="ef-input" style="padding-right:2rem;" onchange="updateEditProductPrice(this)">
+                  <option value="">Choose a product…</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="ef-grid-3">
+            <div class="ef-group" style="margin:0;">
+              <label class="ef-label">Quantity</label>
+              <input type="number" id="addProductQty" class="ef-input" value="1" min="1">
+            </div>
+            <div class="ef-group" style="margin:0;">
+              <label class="ef-label">Unit Price (₹)</label>
+              <input type="number" id="addProductPrice" class="ef-input" placeholder="0.00" readonly step="0.01">
+            </div>
+            <div class="ef-group" style="margin:0; display:flex; align-items:flex-end;">
+              <button type="button" class="ebtn ebtn-primary" style="width:100%;" onclick="addProductToInvoice()">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="edit-section-title">Added this session</div>
+        <div id="addedProductsList" style="min-height:3rem;">
+          <p style="color:var(--ink-3); font-size:0.82rem; text-align:center; padding:1.5rem 0;">
+            No products added yet in this session.
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 4: Final Review -->
+      <div class="edit-modal-page" id="editStep3">
+        <div class="edit-review-block">
+          <div class="edit-review-block-header"><i class="fas fa-file-invoice"></i> Invoice Information</div>
+          <div class="edit-review-block-body">
+            <div class="edit-review-row"><span class="rkey">Invoice Number</span><span class="rval" id="reviewInvNum">—</span></div>
+            <div class="edit-review-row"><span class="rkey">Invoice Date</span><span class="rval" id="reviewDate">—</span></div>
+            <div class="edit-review-row"><span class="rkey">PO Number</span><span class="rval" id="reviewPO">—</span></div>
+            <div class="edit-review-row"><span class="rkey">Payment Method</span><span class="rval" id="reviewMethod">—</span></div>
+            <div class="edit-review-row"><span class="rkey">Invoice Status</span><span class="rval" id="reviewStatus">—</span></div>
+            <div class="edit-review-row"><span class="rkey">Payment Status</span><span class="rval" id="reviewPayStatus">—</span></div>
+          </div>
+        </div>
+        <div class="edit-review-block">
+          <div class="edit-review-block-header"><i class="fas fa-boxes"></i> Products</div>
+          <div class="edit-review-block-body" id="reviewProducts"></div>
+        </div>
+        <div class="edit-review-block">
+          <div class="edit-review-block-header"><i class="fas fa-calculator"></i> Financial Summary</div>
+          <div class="edit-review-block-body">
+            <div class="edit-review-row"><span class="rkey">Subtotal</span><span class="rval" id="reviewSubtotal">₹0.00</span></div>
+            <div class="edit-review-row"><span class="rkey">GST Tax</span><span class="rval" id="reviewTax">₹0.00</span></div>
+            <div class="edit-review-row"><span class="rkey">Discount</span><span class="rval" id="reviewDiscount">-₹0.00</span></div>
+            <div class="edit-review-row total-row">
+              <span class="rkey">Total Amount</span>
+              <span class="rval" id="reviewTotal">₹0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.edit-modal-body -->
+
+    <!-- Navigation Bar -->
+    <div class="edit-modal-nav">
+      <div class="edit-nav-dots" id="editNavDots">
+        <div class="edit-nav-dot active" data-dot="0"></div>
+        <div class="edit-nav-dot" data-dot="1"></div>
+        <div class="edit-nav-dot" data-dot="2"></div>
+        <div class="edit-nav-dot" data-dot="3"></div>
+      </div>
+      <div class="edit-nav-btns">
+        <button class="ebtn ebtn-ghost" id="editNavBack" onclick="editStepBack()" style="display:none;">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <button class="ebtn ebtn-ghost" onclick="closeEditModal()">Cancel</button>
+        <button class="ebtn ebtn-primary" id="editNavNext" onclick="editStepNext()">
+          Next <i class="fas fa-arrow-right"></i>
+        </button>
+        <button class="ebtn ebtn-success" id="editNavSave" style="display:none;" onclick="finalizeAndSave(event, window._editingInvoiceId)">
+          <i class="fas fa-check"></i> Confirm &amp; Save
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /.edit-modal -->
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+/* ═══════════════════════════
+   CREATE INVOICE (original)
+═══════════════════════════ */
+let itemId = 0;
+let allInvoices = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    load();
+    loadCustomers();
+    document.getElementById('invoiceDate').valueAsDate = new Date();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    document.getElementById('search').addEventListener('input', () => {
+        const search = document.getElementById('search').value.toLowerCase();
+        const filtered = allInvoices.filter(i =>
+            (i.invoice_number || '').toLowerCase().includes(search) ||
+            (i.customer_name  || '').toLowerCase().includes(search)
+        );
+        renderInvoices(filtered);
+    });
+    document.getElementById('statusFilter').addEventListener('change', load);
+    document.getElementById('modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modal')) closeModal();
+    });
+}
+
+function load() {
+    const status = document.getElementById('statusFilter').value;
+    const url = status ? `/api/invoices?status=${encodeURIComponent(status)}` : '/api/invoices';
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            allInvoices = Array.isArray(data) ? data : (data.invoices || []);
+            renderInvoices(allInvoices);
+        })
+        .catch(err => {
+            console.error('Error loading invoices:', err);
+            showToast('Error loading invoices', 'error');
+        });
+}
+
+function renderInvoices(invoices) {
+    const tbody = document.getElementById('tbody');
+    if (!invoices || invoices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-inbox"></i><p>No invoices found</p></div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = invoices.map(inv => `
+        <tr>
+            <td><strong>${inv.invoice_number || 'N/A'}</strong></td>
+            <td>${new Date(inv.invoice_date).toLocaleDateString()}</td>
+            <td>${inv.customer_name || 'Walk-in'}</td>
+            <td>${inv.po_number || '—'}</td>
+            <td>₹${parseFloat(inv.total_amount || 0).toFixed(2)}</td>
+            <td><span class="badge badge-info">${inv.status || 'Draft'}</span></td>
+            <td><span class="badge badge-success">${inv.payment_status || 'Pending'}</span></td>
+            <td style="text-align: right;">
+                <button class="btn-icon" onclick="viewInvoice(${inv.id})" title="View" style="color: #4f46e5;"><i class="fas fa-eye"></i></button>
+                <button class="btn-icon" onclick="printInvoice(${inv.id})" title="Print"><i class="fas fa-print"></i></button>
+                <button class="btn-icon" onclick="downloadInvoicePDF(${inv.id})" title="Download PDF" style="color: #10b981;"><i class="fas fa-download"></i></button>
+                <button class="btn-icon" onclick="editInvoice(${inv.id})" title="Edit" style="color: #f59e0b;"><i class="fas fa-edit"></i></button>
+                ${inv.status === 'Draft' ? `
+                <button class="btn-icon danger" onclick="deleteInvoice(${inv.id})" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function loadCustomers() {
+    fetch('/api/customers')
+        .then(r => r.json())
+        .then(data => {
+            const sel = document.getElementById('customerId');
+            const opts = Array.isArray(data) ? data.map(c =>
+                `<option value="${c.id}">${c.customer_name}</option>`).join('') : '';
+            sel.innerHTML = '<option value="">Select customer...</option>' + opts;
+        })
+        .catch(err => console.error('Error loading customers:', err));
+}
+
+function openModal() {
+    itemId = 0;
+    document.getElementById('itemsContainer').innerHTML = '';
+    document.getElementById('discount').value = '0';
+    document.getElementById('customerId').value = '';
+    document.getElementById('invoiceDate').valueAsDate = new Date();
+    addItem();
+    document.getElementById('modal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+}
+
+function addItem() {
+    const id = ++itemId;
+    const div = document.createElement('div');
+    div.className = 'invoice-item';
+    div.id = `item-${id}`;
+    div.innerHTML = `
+        <select class="input" style="flex: 1; min-width: 200px;" onchange="loadProductPrice(${id}); updateSummary();" required>
+            <option value="">Select product...</option>
+        </select>
+        <input type="number" class="input" placeholder="Qty" value="1" min="1" step="0.01" oninput="updateSummary();" required>
+        <input type="number" class="input" placeholder="Unit Price" value="0" min="0" step="0.01" oninput="updateSummary();">
+        <input type="number" class="input" placeholder="GST %" value="0" oninput="updateSummary();">
+        <input type="number" class="input" placeholder="Line Total" value="0" readonly style="background:#f8fafc; cursor:not-allowed; font-weight:600;">
+        <button type="button" class="btn-icon danger" onclick="removeItem(${id})" title="Remove"><i class="fas fa-trash"></i></button>
+    `;
+    document.getElementById('itemsContainer').appendChild(div);
+    loadProductsDropdown(id);
+}
+
+function removeItem(id) {
+    const items = document.querySelectorAll('.invoice-item');
+    if (items.length <= 1) { showToast('At least one item is required', 'error'); return; }
+    const item = document.getElementById(`item-${id}`);
+    if (item) item.remove();
+    updateSummary();
+}
+
+function loadProductsDropdown(id) {
+    fetch('/api/products')
+        .then(r => r.json())
+        .then(data => {
+            const sel = document.querySelector(`#item-${id} select`);
+            if (!sel) return;
+            const opts = Array.isArray(data) ? data.map(p =>
+                `<option value="${p.id}" data-price="${p.selling_price||0}" data-gst="${p.gst_percentage||0}">${p.product_name}</option>`).join('') : '';
+            sel.innerHTML = '<option value="">Select product...</option>' + opts;
+        })
+        .catch(err => console.error('Error loading products:', err));
+}
+
+function loadProductPrice(id) {
+    const item = document.getElementById(`item-${id}`);
+    if (!item) return;
+    const sel = item.querySelector('select').selectedOptions[0];
+    const inputs = item.querySelectorAll('input');
+    if (sel && sel.value) {
+        inputs[1].value = parseFloat(sel.dataset.price || 0).toFixed(2);
+        inputs[2].value = (sel.dataset.gst || 0) + '%';
+    } else {
+        inputs[1].value = '';
+        inputs[2].value = '';
+        inputs[3].value = '';
+    }
+    updateSummary();
+}
+
+function updateSummary() {
+    let subtotal = 0, totalTax = 0;
+    document.querySelectorAll('.invoice-item').forEach(item => {
+        const inputs = item.querySelectorAll('input');
+        const qty = parseFloat(inputs[0].value) || 0;
+        const unitPrice = parseFloat(inputs[1].value) || 0;
+        const gstPct = parseFloat(inputs[2].value) || 0;
+        const base = qty * unitPrice;
+        const tax = base * gstPct / 100;
+        inputs[3].value = (base + tax).toFixed(2);
+        subtotal += base;
+        totalTax += tax;
+    });
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const transportCharges = parseFloat(document.getElementById('transportCharges').value) || 0;
+    const grandTotal = Math.max(0, subtotal + totalTax + transportCharges - discount);
+    document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+    document.getElementById('gst').textContent = totalTax.toFixed(2);
+    document.getElementById('total').textContent = grandTotal.toFixed(2);
+}
+
+function save(event) {
+    event.preventDefault();
+    const customerId = document.getElementById('customerId').value;
+    if (!customerId) { showToast('Please select a customer', 'error'); return; }
+    
+    const items = [];
+    document.querySelectorAll('.invoice-item').forEach(item => {
+        const select = item.querySelector('select');
+        const inputs = item.querySelectorAll('input');
+        const productId = select.value;
+        const quantity = parseFloat(inputs[0].value) || 1;
+        const unitPrice = parseFloat(inputs[1].value) || 0;
+        const gstPercentage = parseFloat(inputs[2].value) || 0;
+        
+        if (productId && !isNaN(productId)) {
+            items.push({
+                product_id: parseInt(productId),
+                quantity: quantity,
+                unit_price: unitPrice,
+                gst_percentage: gstPercentage
+            });
+        }
+    });
+    
+    if (!items.length) { showToast('Please add at least one item', 'error'); return; }
+    
+    const btn = event.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    const payload = {
+        customer_id: parseInt(customerId),
+        invoice_date: document.getElementById('invoiceDate').value,
+        payment_method: document.getElementById('paymentMethod').value,
+        discount: parseFloat(document.getElementById('discount').value) || 0,
+        transport_charges: parseFloat(document.getElementById('transportCharges').value) || 0,
+        items: items
+    };
+    
+    fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) throw new Error(data.error || 'Server error');
+        showToast('✓ Invoice created successfully!', 'success');
+        closeModal();
+        load();
+    })
+    .catch(err => { 
+        console.error('Error:', err);
+        showToast('Error: ' + err.message, 'error'); 
+    })
+    .finally(() => { 
+        btn.disabled = false; 
+        btn.innerHTML = '<i class="fas fa-save"></i> Save Invoice'; 
+    });
+}
+
+function viewInvoice(id)  { window.location.href = `/api/invoices/${id}/print`; }
+function printInvoice(id) { window.open(`/api/invoices/${id}/print`, '_blank'); }
+function downloadInvoicePDF(id) { window.location.href = `/api/invoices/${id}/download-pdf`; }
+
+function deleteInvoice(id) {
+    if (!confirm('Are you sure you want to delete this invoice?')) return;
+    fetch(`/api/invoices/${id}/delete`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(() => { showToast('Invoice deleted', 'success'); load(); })
+        .catch(err => { showToast('Error deleting invoice', 'error'); });
+}
+
+/* ═══════════════════════════
+   EDIT INVOICE — New Design
+═══════════════════════════ */
+let editCurrentStep = 0;
+const EDIT_TOTAL_STEPS = 4;
+window._editingInvoiceId = null;
+window._editInvoiceData = null; // store raw data for recalc
+
+function editInvoice(id) {
+    fetch(`/api/invoices/${id}`)
+        .then(r => r.json())
+        .then(invoice => openEditModal(invoice))
+        .catch(err => { console.error('Error loading invoice:', err); showToast('Error loading invoice', 'error'); });
+}
+
+function openEditModal(invoice) {
+    window._editingInvoiceId = invoice.id;
+    window._editInvoiceData = invoice;
+
+    // Top bar
+    document.getElementById('editModalInvoiceNum').textContent =
+        `${invoice.invoice_number || '#—'} · ${new Date(invoice.invoice_date).toLocaleDateString()}`;
+
+    // Step 1 fields
+    const dateStr = new Date(invoice.invoice_date).toISOString().split('T')[0];
+    document.getElementById('editInvoiceDate').value     = dateStr;
+    document.getElementById('editPoNumber').value        = invoice.po_number || '';
+    document.getElementById('editPaymentMethod').value   = invoice.payment_method || 'Cash';
+    document.getElementById('editStatus').value          = invoice.status || 'Draft';
+    document.getElementById('editPaymentStatus').value   = invoice.payment_status || 'Unpaid';
+    document.getElementById('editDiscount').value        = invoice.discount || 0;
+
+    // Status chip
+    updateEditStatusChip();
+
+    // Summary card values
+    const sub = parseFloat(invoice.subtotal   || 0);
+    const tax = parseFloat(invoice.total_tax  || 0);
+    const dis = parseFloat(invoice.discount   || 0);
+    document.getElementById('editS1Subtotal').textContent     = `₹${sub.toFixed(2)}`;
+    document.getElementById('editS1Tax').textContent          = `₹${tax.toFixed(2)}`;
+    document.getElementById('editDiscountDisplay').textContent = `- ₹${dis.toFixed(2)}`;
+    document.getElementById('editTotalDisplay').textContent    = `₹${Math.max(0, sub + tax - dis).toFixed(2)}`;
+
+    // Step 2 — product cards
+    const productsList = document.getElementById('editProductsList');
+    const items = invoice.items || [];
+    productsList.innerHTML = items.map((item, idx) => `
+        <div class="edit-product-card">
+            <div class="edit-product-card-header">
+                <div class="edit-product-card-name">${item.product_name || 'Product'}</div>
+                <span class="edit-product-card-price">₹${parseFloat(item.unit_price).toFixed(2)} / pc</span>
+            </div>
+            <div class="edit-product-card-fields">
+                <div class="ef-group" style="margin:0;">
+                    <label class="ef-label">Quantity</label>
+                    <input type="number" class="ef-input item-qty" value="${item.quantity}" min="1" data-idx="${idx}" oninput="recalcProductCard(this)">
+                </div>
+                <div class="ef-group" style="margin:0;">
+                    <label class="ef-label">Unit Price (₹)</label>
+                    <input type="number" class="ef-input item-price" value="${item.unit_price}" step="0.01" data-idx="${idx}" oninput="recalcProductCard(this)">
+                </div>
+                <div class="ef-group" style="margin:0;">
+                    <label class="ef-label">GST %</label>
+                    <input type="number" class="ef-input" value="${item.gst_percentage || 0}" readonly>
+                </div>
+                <div class="ef-group" style="margin:0;">
+                    <label class="ef-label">Line Total (₹)</label>
+                    <input type="text" class="ef-input" value="${parseFloat(item.line_total).toFixed(2)}" readonly id="editLt${idx}">
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    // Meta bar
+    document.getElementById('editProductsCount').textContent = `${items.length} product${items.length !== 1 ? 's' : ''} on this invoice`;
+    const totalUnits = items.reduce((s, i) => s + parseFloat(i.quantity || 0), 0);
+    document.getElementById('editProductsChips').innerHTML = `
+        <span class="info-chip"><i class="fas fa-boxes"></i> ${totalUnits} units total</span>
+    `;
+
+    // Step 3 — reset add panel & load products
+    document.getElementById('addedProductsList').innerHTML = `
+        <p style="color:var(--ink-3); font-size:0.82rem; text-align:center; padding:1.5rem 0;">No products added yet in this session.</p>`;
+    document.getElementById('addProductQty').value    = 1;
+    document.getElementById('addProductPrice').value  = '';
+    loadEditProductsForAdd();
+
+    // Step 4 — pre-fill review
+    updateEditReview(invoice);
+
+    // Open modal at step 1
+    editCurrentStep = 0;
+    switchEditStep(0);
+    document.getElementById('editModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function handleEditOverlayClick(e) {
+    if (e.target === document.getElementById('editModal')) closeEditModal();
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('editModal').classList.contains('active')) closeEditModal();
+});
+
+function switchEditStep(step) {
+    // Pages
+    document.querySelectorAll('.edit-modal-page').forEach((p, i) => {
+        p.classList.toggle('active', i === step);
+    });
+    // Tabs
+    document.querySelectorAll('.edit-tab-item').forEach((t, i) => {
+        t.classList.remove('active', 'done');
+        if (i === step) t.classList.add('active');
+        if (i < step)  t.classList.add('done');
+    });
+    // Dots
+    document.querySelectorAll('.edit-nav-dot').forEach((d, i) => {
+        d.classList.remove('active', 'done');
+        if (i === step) d.classList.add('active');
+        if (i < step)  d.classList.add('done');
+    });
+    // Nav buttons
+    document.getElementById('editNavBack').style.display = step > 0 ? 'inline-flex' : 'none';
+    document.getElementById('editNavNext').style.display = step < EDIT_TOTAL_STEPS - 1 ? 'inline-flex' : 'none';
+    document.getElementById('editNavSave').style.display = step === EDIT_TOTAL_STEPS - 1 ? 'inline-flex' : 'none';
+
+    // Sync review on last step
+    if (step === 3) syncEditReview();
+
+    editCurrentStep = step;
+}
+
+function editStepNext() { if (editCurrentStep < EDIT_TOTAL_STEPS - 1) switchEditStep(editCurrentStep + 1); }
+function editStepBack() { if (editCurrentStep > 0) switchEditStep(editCurrentStep - 1); }
+
+/* Discount recalc on Step 1 */
+function onEditDiscountChange() {
+    const inv = window._editInvoiceData;
+    if (!inv) return;
+    const sub      = parseFloat(inv.subtotal  || 0);
+    const tax      = parseFloat(inv.total_tax || 0);
+    const discount = parseFloat(document.getElementById('editDiscount').value) || 0;
+    const total    = Math.max(0, sub + tax - discount);
+    document.getElementById('editDiscountDisplay').textContent = `- ₹${discount.toFixed(2)}`;
+    document.getElementById('editTotalDisplay').textContent    = `₹${total.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+}
+
+/* Status chip update */
+function updateEditStatusChip() {
+    const val  = document.getElementById('editStatus').value;
+    const chip = document.getElementById('editStatusChip');
+    const map  = { 'Draft': ['draft','Draft'], 'Finalized': ['final','Finalized'], 'Cancelled': ['unpaid','Cancelled'] };
+    const [cls, label] = map[val] || ['draft', val];
+    chip.className = `s-badge ${cls}`;
+    chip.innerHTML = `<i class="fas fa-circle" style="font-size:0.45rem;"></i> ${label}`;
+}
+
+/* Line total recalc on Step 2 */
+function recalcProductCard(input) {
+    const idx   = input.dataset.idx;
+    const card  = input.closest('.edit-product-card');
+    const qty   = parseFloat(card.querySelector('.item-qty').value)   || 0;
+    const price = parseFloat(card.querySelector('.item-price').value) || 0;
+    const gstEl = card.querySelectorAll('.ef-input')[2];
+    const gstPct= parseFloat(gstEl ? gstEl.value : 0) || 0;
+    const lt    = document.getElementById(`editLt${idx}`);
+    if (lt) lt.value = (qty * price * (1 + gstPct / 100)).toFixed(2);
+}
+
+/* Load products for Step 3 dropdown */
+function loadEditProductsForAdd() {
+    const select = document.getElementById('addProductSelect');
+    // Clear existing options except placeholder
+    select.innerHTML = '<option value="">Choose a product…</option>';
+    fetch('/api/products')
+        .then(r => r.json())
+        .then(products => {
+            (Array.isArray(products) ? products : []).forEach(p => {
+                if (p.is_active !== false) {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.product_name} (₹${p.selling_price})`;
+                    opt.dataset.price = p.selling_price;
+                    opt.dataset.gst = p.gst_percentage || 0;
+                    select.appendChild(opt);
+                }
+            });
+        })
+        .catch(err => console.error('Error loading products for add:', err));
+}
+
+function updateEditProductPrice(select) {
+    const opt = select.selectedOptions[0];
+    document.getElementById('addProductPrice').value = opt ? (opt.dataset.price || '') : '';
+}
+
+function addProductToInvoice() {
+    const sel   = document.getElementById('addProductSelect');
+    const qty   = parseFloat(document.getElementById('addProductQty').value) || 1;
+    const price = parseFloat(document.getElementById('addProductPrice').value) || 0;
+    const list  = document.getElementById('addedProductsList');
+
+    if (!sel || !sel.value) { showToast('Please select a product', 'error'); return; }
+
+    // ensure session array exists to collect added items during edit
+    window._editAddedProducts = window._editAddedProducts || [];
+
+    const prodId = parseInt(sel.value);
+    const name = sel.selectedOptions[0].text.split(' (₹')[0];
+    const gst = parseFloat(sel.selectedOptions[0].dataset.gst || 0) || 0;
+    const total = qty * price;
+
+    // remove placeholder paragraph if present
+    list.querySelectorAll('p').forEach(p => p.remove());
+
+    const tag = document.createElement('div');
+    tag.className = 'edit-added-tag';
+    tag.innerHTML = `<i class="fas fa-check-circle"></i> ${name} × ${qty} = ₹${total.toFixed(2)}`;
+    list.appendChild(tag);
+
+    // record the added product so finalizeAndSave can include it
+    window._editAddedProducts.push({
+        product_id: prodId,
+        product_name: name,
+        quantity: qty,
+        unit_price: price,
+        gst_percentage: gst
+    });
+
+    sel.value = '';
+    document.getElementById('addProductQty').value  = 1;
+    document.getElementById('addProductPrice').value = '';
+
+    showToast('Product added! Continue to review.', 'success');
+}
+
+/* Sync review section */
+function syncEditReview() {
+    const inv = window._editInvoiceData;
+    if (!inv) return;
+    const dateVal   = document.getElementById('editInvoiceDate').value;
+    const po        = document.getElementById('editPoNumber').value;
+    const method    = document.getElementById('editPaymentMethod').value;
+    const status    = document.getElementById('editStatus').value;
+    const payStatus = document.getElementById('editPaymentStatus').value;
+    const discount  = parseFloat(document.getElementById('editDiscount').value) || 0;
+    const sub       = parseFloat(inv.subtotal  || 0);
+    const tax       = parseFloat(inv.total_tax || 0);
+
+    document.getElementById('reviewInvNum').textContent    = inv.invoice_number || '—';
+    document.getElementById('reviewDate').textContent      = dateVal ? dateVal.split('-').reverse().join('-') : '—';
+    document.getElementById('reviewPO').textContent        = po || '—';
+    document.getElementById('reviewMethod').textContent    = method;
+    document.getElementById('reviewStatus').textContent    = status;
+    document.getElementById('reviewPayStatus').textContent = payStatus;
+    document.getElementById('reviewSubtotal').textContent  = `₹${sub.toFixed(2)}`;
+    document.getElementById('reviewTax').textContent       = `₹${tax.toFixed(2)}`;
+    document.getElementById('reviewDiscount').textContent  = `-₹${discount.toFixed(2)}`;
+    document.getElementById('reviewTotal').textContent     = `₹${Math.max(0, sub + tax - discount).toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+}
+
+function updateEditReview(invoice) {
+    const items = invoice.items || [];
+    document.getElementById('reviewProducts').innerHTML = items.length
+        ? items.map(item => `
+            <div class="edit-review-row">
+                <span class="rkey">${item.product_name} × ${item.quantity}</span>
+                <span class="rval">₹${parseFloat(item.line_total).toFixed(2)}</span>
+            </div>`).join('')
+        : '<p style="color:var(--ink-3); font-size:0.82rem;">No items</p>';
+}
+
+/* Save */
+function finalizeAndSave(event, invoiceId) {
+    event.preventDefault();
+    const invoiceDate   = document.getElementById('editInvoiceDate').value;
+    const poNumber      = document.getElementById('editPoNumber').value;
+    const paymentMethod = document.getElementById('editPaymentMethod').value;
+    const status        = document.getElementById('editStatus').value;
+    const paymentStatus = document.getElementById('editPaymentStatus').value;
+    const discount      = document.getElementById('editDiscount').value;
+
+    if (!invoiceDate) { showToast('Invoice date is required', 'error'); return; }
+
+    // build items array: include edited existing items + newly added session items
+    const items = [];
+    const baseItems = (window._editInvoiceData && window._editInvoiceData.items) ? window._editInvoiceData.items : [];
+
+    baseItems.forEach((bi, idx) => {
+        const qtyEl = document.querySelector(`.item-qty[data-idx="${idx}"]`);
+        const priceEl = document.querySelector(`.item-price[data-idx="${idx}"]`);
+        const qty = qtyEl ? parseFloat(qtyEl.value) || parseFloat(bi.quantity || 0) : parseFloat(bi.quantity || 0);
+        const unit_price = priceEl ? parseFloat(priceEl.value) || parseFloat(bi.unit_price || 0) : parseFloat(bi.unit_price || 0);
+        items.push({
+            product_id: bi.product_id || (bi.product && bi.product.id),
+            quantity: qty,
+            unit_price: unit_price,
+            gst_percentage: bi.gst_percentage || (bi.product && bi.product.gst_percentage) || 0
+        });
+    });
+
+    const added = window._editAddedProducts || [];
+    added.forEach(a => {
+        items.push({
+            product_id: a.product_id,
+            quantity: a.quantity,
+            unit_price: a.unit_price,
+            gst_percentage: a.gst_percentage || 0
+        });
+    });
+
+    const payload = {
+        invoice_date:   invoiceDate,
+        po_number:      poNumber || '',
+        payment_method: paymentMethod,
+        status,
+        payment_status: paymentStatus,
+    discount:       parseFloat(discount) || 0,
+    items: items
+};
+
+const btn = document.getElementById('editNavSave');
+if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+
+fetch(`/api/invoices/${invoiceId}/update`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+})
+.then(r => r.json())
+.then(resp => {
+    if (resp && resp.success) {
+        showToast('Invoice updated successfully!', 'success');
+        window._editAddedProducts = [];
+        closeEditModal();
+        load();
+    } else {
+        showToast((resp && resp.error) || 'Error updating invoice', 'error');
+    }
+})
+.catch(err => {
+    console.error('Update error:', err);
+    showToast('Error updating invoice', 'error');
+})
+.finally(() => {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Confirm &amp; Save'; }
+});
+}
+
+/* Toast */
+function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = `toast toast-${type} show`;
+    setTimeout(() => { toast.className = 'toast'; }, 4000);
+}
+</script>
+
+{% endblock %}

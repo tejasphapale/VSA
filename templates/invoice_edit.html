@@ -1,0 +1,800 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-lg" style="border-radius: 15px; overflow: hidden;">
+                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">✏️ Edit Invoice</h2>
+                            <p class="mb-0" style="font-size: 1.1rem; opacity: 0.95;">Invoice # <strong>{{ invoice.invoice_number }}</strong> | Date: <strong>{{ invoice.invoice_date.strftime('%d-%b-%Y') if invoice.invoice_date else 'N/A' }}</strong></p>
+                        </div>
+                        <a href="/invoices" class="btn btn-light btn-sm" style="padding: 0.5rem 1rem;">← Back</a>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Alert Message Section -->
+                    <div id="alertContainer"></div>
+
+                    <form id="editForm">
+                        <!-- Invoice Header Info -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">📋 Invoice Number</label>
+                                    <input type="text" class="form-control" value="{{ invoice.invoice_number }}" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">📅 Invoice Date</label>
+                                    <input type="date" class="form-control" id="invoice_date" name="invoice_date" 
+                                           value="{{ invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else '' }}" required
+                                           style="border: 2px solid #667eea;">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">🏷️ Status</label>
+                                    <input type="text" class="form-control" value="{{ invoice.status }}" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">💵 PO Number</label>
+                                    <input type="text" class="form-control" id="po_number" name="po_number" 
+                                           value="{{ invoice.po_number if invoice.po_number else '2627574' }}"
+                                           placeholder="Purchase Order" style="border: 2px solid #667eea;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer & Shipment Details -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0" style="border-left: 4px solid #667eea !important;">
+                                    <div class="card-body">
+                                        <h5 class="card-title mb-3">👤 Customer Details</h5>
+                                        <div class="form-group mb-2">
+                                            <label class="form-label small fw-bold">Customer Name</label>
+                                            <input type="text" class="form-control" value="{{ invoice.customer.customer_name if invoice.customer else 'N/A' }}" 
+                                                   readonly style="background-color: #e9ecef;">
+                                        </div>
+                                        <div class="form-group mb-2">
+                                            <label class="form-label small fw-bold">GSTIN</label>
+                                            <input type="text" class="form-control" value="{{ invoice.customer.gst_number if invoice.customer else 'Unregistered' }}" 
+                                                   readonly style="background-color: #e9ecef;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label small fw-bold">City</label>
+                                            <input type="text" class="form-control" value="{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}" 
+                                                   readonly style="background-color: #e9ecef;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0" style="border-left: 4px solid #f093fb !important;">
+                                    <div class="card-body">
+                                        <h5 class="card-title mb-3">🚚 Shipment Details</h5>
+                                        <div class="form-group mb-2">
+                                            <label class="form-label small fw-bold">Challan Number</label>
+                                            <input type="text" class="form-control" id="challan_no" name="challan_no" 
+                                                   value="{{ invoice.challan_no if invoice.challan_no else invoice.invoice_number }}"
+                                                   style="border: 2px solid #f093fb;">
+                                        </div>
+                                        <div class="form-group mb-2">
+                                            <label class="form-label small fw-bold">Transport Mode</label>
+                                            <input type="text" class="form-control" id="transport_mode" name="transport_mode" 
+                                                   value="{{ invoice.transport_mode if invoice.transport_mode else 'Road' }}"
+                                                   placeholder="e.g., Road, Air, Rail" style="border: 2px solid #f093fb;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label small fw-bold">Vehicle Number</label>
+                                            <input type="text" class="form-control" id="vehicle_number" name="vehicle_number" 
+                                                   value="{{ invoice.vehicle_number if invoice.vehicle_number else '' }}"
+                                                   placeholder="Vehicle No" style="border: 2px solid #f093fb;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Details -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">📍 Contact Person</label>
+                                    <input type="text" class="form-control" id="contact_person" name="contact_person" 
+                                           value="{{ invoice.contact_person if invoice.contact_person else '' }}"
+                                           placeholder="Name of contact" style="border: 2px solid #43e97b;">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">⚖️ E-Weighment</label>
+                                    <input type="text" class="form-control" id="e_weighment" name="e_weighment" 
+                                           value="{{ invoice.e_weighment if invoice.e_weighment else '' }}"
+                                           placeholder="Weighment No" style="border: 2px solid #43e97b;">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">⏰ Payment Terms</label>
+                                    <input type="text" class="form-control" id="pay_terms" name="pay_terms" 
+                                           value="{{ invoice.pay_terms if invoice.pay_terms else '0 Days' }}"
+                                           placeholder="e.g., 30 Days" style="border: 2px solid #43e97b;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Management -->
+                        <div class="card mb-4 border-0" style="border-left: 4px solid #4facfe !important;">
+                            <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">📦 Invoice Items - Edit & Manage</h5>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="addProductRow()">
+                                    <i class="fas fa-plus"></i> Add Product
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0" id="itemsTable">
+                                        <thead style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                                            <tr>
+                                                <th style="width: 25%;">Product Name</th>
+                                                <th style="width: 10%;">Quantity</th>
+                                                <th style="width: 12%;">Unit Price (₹)</th>
+                                                <th style="width: 12%;">GST %</th>
+                                                <th style="width: 15%;">Amount (₹)</th>
+                                                <th style="width: 10%;">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsTableBody">
+                                            {% for item in invoice.items %}
+                                            <tr class="item-row" data-item-id="{{ item.id }}">
+                                                <td>
+                                                    <select class="form-control form-control-sm product-select" onchange="updateItemRow(this)" data-product-id="{{ item.product_id }}">
+                                                        <option value="">Select Product...</option>
+                                                    </select>
+                                                    <small class="text-muted d-block mt-1">{{ item.product.product_name if item.product else 'Select a product' }}</small>
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm quantity-input" value="{{ item.quantity }}" min="0.01" step="0.01" onchange="updateItemRow(this)">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm price-input" value="{{ item.unit_price }}" min="0" step="0.01" onchange="updateItemRow(this)">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm gst-input" value="{{ item.gst_percentage }}" min="0" max="100" step="0.1" onchange="updateItemRow(this)">
+                                                </td>
+                                                <td class="align-middle">
+                                                    <strong class="item-amount">₹ {{ "%.2f"|format(item.line_total) }}</strong>
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-secondary btn-sm" onclick="moveItem(this, 'up')" title="Move up">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-secondary btn-sm" onclick="moveItem(this, 'down')" title="Move down">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    {% if not invoice.items %}
+                                    <div class="alert alert-info m-3">
+                                        <strong>No items added yet.</strong> Click "Add Product" to add items to this invoice.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Totals & Summary -->
+                        <div class="card mb-4 border-0" style="border-left: 4px solid #43e97b !important;">
+                            <div class="card-header bg-light border-0">
+                                <h5 class="mb-0">💰 Invoice Summary</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="p-3 rounded" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+                                            <h6 class="fw-bold mb-3" style="color: #2c3e50;">Amount in Words:</h6>
+                                            <p class="mb-2"><strong>Subtotal:</strong> <span id="subtotalWords">{{ amount_in_words(invoice.subtotal) }}</span></p>
+                                            <p class="mb-2"><strong>Tax Amount:</strong> <span id="taxWords">{{ amount_in_words(invoice.total_tax) }}</span></p>
+                                            <p class="mb-0"><strong>Total Amount:</strong> <span id="totalWords">{{ amount_in_words(invoice.total_amount) }}</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <table class="table table-sm mb-0">
+                                            <tbody>
+                                                <tr style="background-color: #f8f9fa;">
+                                                    <td class="fw-bold">Subtotal (Before Tax)</td>
+                                                    <td class="text-end">₹ <strong id="subtotalAmount">{{ "%.2f"|format(invoice.subtotal) }}</strong></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fw-bold">CGST @ 9%</td>
+                                                    <td class="text-end">₹ <span id="cgstAmount">{{ "%.2f"|format(invoice.total_tax / 2) }}</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fw-bold">SGST @ 9%</td>
+                                                    <td class="text-end">₹ <span id="sgstAmount">{{ "%.2f"|format(invoice.total_tax / 2) }}</span></td>
+                                                </tr>
+                                                <tr style="background-color: #fff3cd;">
+                                                    <td class="fw-bold">🚚 Transport Charges</td>
+                                                    <td class="text-end">₹ <input type="number" id="transportCharges" value="{{ "%.2f"|format(invoice.transport_charges or 0) }}" min="0" step="0.01" style="width: 100px; text-align: right; border: 2px solid #ffc107; border-radius: 5px; padding: 2px 5px;" onchange="calculateTotals()"></td>
+                                                </tr>
+                                                <tr style="background-color: #d1e7dd;">
+                                                    <td class="fw-bold">💰 Discount</td>
+                                                    <td class="text-end">₹ <input type="number" id="discountAmount" value="{{ "%.2f"|format(invoice.discount or 0) }}" min="0" step="0.01" style="width: 100px; text-align: right; border: 2px solid #198754; border-radius: 5px; padding: 2px 5px;" onchange="calculateTotals()"></td>
+                                                </tr>
+                                                <tr style="background-color: #e8f5e9; border-top: 2px solid #43e97b; border-bottom: 2px solid #43e97b;">
+                                                    <td class="fw-bold text-success">Total Tax (GST)</td>
+                                                    <td class="text-end fw-bold text-success">₹ <span id="taxAmount">{{ "%.2f"|format(invoice.total_tax) }}</span></td>
+                                                </tr>
+                                                <tr style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                                                    <td class="fw-bold fs-5">TOTAL AMOUNT</td>
+                                                    <td class="text-end fw-bold fs-5">₹ <span id="totalAmount">{{ "%.2f"|format(invoice.total_amount) }}</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3 justify-content-between mt-5 mb-4">
+                            <div>
+                                <a href="/invoices" class="btn btn-secondary btn-lg" style="padding: 0.75rem 2rem; font-weight: 600;">
+                                    <i class="fas fa-arrow-left"></i> Cancel & Go Back
+                                </a>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-success btn-lg" id="saveBtn" style="padding: 0.75rem 2rem; font-weight: 600;">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                                <a href="/api/invoices/{{ invoice.id }}/print" target="_blank" class="btn btn-info btn-lg" style="padding: 0.75rem 2rem; font-weight: 600;">
+                                    <i class="fas fa-print"></i> View & Print
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .container-fluid {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        border-radius: 12px 12px 0 0;
+        padding: 1.25rem;
+        font-weight: 600;
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .form-label {
+        color: #2c3e50;
+        margin-bottom: 0.6rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+        background-color: white;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        background-color: white;
+    }
+
+    .form-control[readonly] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+        color: #6c757d;
+    }
+
+    .form-control-sm {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .product-select {
+        border: 2px solid #4facfe !important;
+    }
+
+    .quantity-input, .price-input, .gst-input {
+        border: 2px solid #43e97b !important;
+    }
+
+    .product-select:focus, .quantity-input:focus, .price-input:focus, .gst-input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+    }
+
+    .item-row {
+        transition: all 0.2s ease;
+    }
+
+    .item-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-lg:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-sm {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.8rem;
+        margin: 2px;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        font-weight: 600;
+        padding: 1rem;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .table tbody td {
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+    }
+
+    .table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .alert {
+        border: none;
+        border-radius: 8px;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+
+    .alert-info {
+        background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+        color: #0c5460;
+        border-left: 4px solid #17a2b8;
+    }
+
+    .item-amount {
+        color: #28a745;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .d-flex {
+            flex-direction: column !important;
+        }
+
+        .btn-lg {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.7rem;
+        }
+    }
+
+    @media print {
+        .btn, .container-fluid button, a {
+            display: none !important;
+        }
+    }
+</style>
+
+<script>
+    // Convert number to words (for amount display)
+    function numberToWords(num) {
+        const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+        const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        const scales = ['', 'Thousand', 'Lakh', 'Crore'];
+
+        if (num === 0) return 'Zero';
+        if (num < 0) return 'Minus ' + numberToWords(-num);
+
+        let words = '';
+        let scale = 0;
+
+        while (num > 0) {
+            if (num % 1000 !== 0) {
+                words = convertHundreds(num % 1000) + (scales[scale] ? ' ' + scales[scale] : '') + (words ? ' ' + words : '');
+            }
+            num = Math.floor(num / 1000);
+            scale++;
+        }
+
+        return words.trim();
+
+        function convertHundreds(n) {
+            let result = '';
+            if (n >= 100) {
+                result += ones[Math.floor(n / 100)] + ' Hundred ';
+                n %= 100;
+            }
+            if (n >= 20) {
+                result += tens[Math.floor(n / 10)];
+                if (n % 10 > 0) result += ' ' + ones[n % 10];
+            } else if (n >= 10) {
+                result += teens[n - 10];
+            } else if (n > 0) {
+                result += ones[n];
+            }
+            return result.trim();
+        }
+    }
+
+    // Load products on page load
+    let allProducts = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadProducts();
+    });
+
+    // Load all products
+    function loadProducts() {
+        fetch('/api/products')
+            .then(r => r.json())
+            .then(products => {
+                allProducts = products;
+                populateProductSelects();
+                calculateTotals();
+            })
+            .catch(err => console.error('Error loading products:', err));
+    }
+
+    // Populate product dropdown in all rows
+    function populateProductSelects() {
+        const selects = document.querySelectorAll('.product-select');
+        selects.forEach(select => {
+            const currentProductId = select.getAttribute('data-product-id');
+            
+            select.innerHTML = '<option value="">Select Product...</option>';
+            
+            allProducts.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = `${product.product_name} - ₹${product.selling_price.toFixed(2)}`;
+                if (currentProductId && parseInt(currentProductId) === product.id) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        });
+    }
+
+    // Add new product row
+    function addProductRow() {
+        const tbody = document.getElementById('itemsTableBody');
+        const newRow = document.createElement('tr');
+        newRow.className = 'item-row';
+        newRow.innerHTML = `
+            <td>
+                <select class="form-control form-control-sm product-select" onchange="updateItemRow(this)">
+                    <option value="">Select Product...</option>
+                    ${allProducts.map(p => `<option value="${p.id}">${p.product_name} - ₹${p.selling_price.toFixed(2)}</option>`).join('')}
+                </select>
+            </td>
+            <td>
+                <input type="number" class="form-control form-control-sm quantity-input" value="1" min="0.01" step="0.01" onchange="updateItemRow(this)">
+            </td>
+            <td>
+                <input type="number" class="form-control form-control-sm price-input" value="0" min="0" step="0.01" onchange="updateItemRow(this)">
+            </td>
+            <td>
+                <input type="number" class="form-control form-control-sm gst-input" value="18" min="0" max="100" step="0.1" onchange="updateItemRow(this)">
+            </td>
+            <td class="align-middle">
+                <strong class="item-amount">₹ 0.00</strong>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="moveItem(this, 'up')" title="Move up">
+                    <i class="fas fa-arrow-up"></i>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="moveItem(this, 'down')" title="Move down">
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(newRow);
+        
+        // Set focus to product select
+        newRow.querySelector('.product-select').focus();
+    }
+
+    // Update item row when product changes
+    function updateItemRow(element) {
+        const row = element.closest('tr');
+        const productSelect = row.querySelector('.product-select');
+        
+        if (element.classList.contains('product-select')) {
+            const productId = parseInt(productSelect.value);
+            const product = allProducts.find(p => p.id === productId);
+            
+            if (product) {
+                // Update product name display
+                row.querySelector('small').textContent = product.product_name;
+                
+                // Set default price and GST
+                const priceInput = row.querySelector('.price-input');
+                const gstInput = row.querySelector('.gst-input');
+                
+                if (priceInput.value == 0) {
+                    priceInput.value = product.selling_price.toFixed(2);
+                }
+                if (gstInput.value == 18) {
+                    gstInput.value = product.gst_percentage.toFixed(1);
+                }
+            }
+        }
+        
+        calculateRowAmount(row);
+        calculateTotals();
+    }
+
+    // Calculate amount for a row
+    function calculateRowAmount(row) {
+        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const price = parseFloat(row.querySelector('.price-input').value) || 0;
+        const gstPercent = parseFloat(row.querySelector('.gst-input').value) || 0;
+        
+        const subtotal = quantity * price;
+        const gstAmount = subtotal * gstPercent / 100;
+        const total = subtotal + gstAmount;
+        
+        row.querySelector('.item-amount').textContent = `₹ ${total.toFixed(2)}`;
+    }
+
+    // Remove item row
+    function removeItemRow(button) {
+        const row = button.closest('tr');
+        if (document.querySelectorAll('.item-row').length > 1) {
+            row.remove();
+            calculateTotals();
+        } else {
+            alert('Invoice must have at least one item');
+        }
+    }
+
+    // Move item up or down
+    function moveItem(button, direction) {
+        const row = button.closest('tr');
+        const tbody = row.parentElement;
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const currentIndex = rows.indexOf(row);
+        
+        if (direction === 'up' && currentIndex > 0) {
+            rows[currentIndex - 1].before(row);
+        } else if (direction === 'down' && currentIndex < rows.length - 1) {
+            rows[currentIndex + 1].after(row);
+        }
+    }
+
+    // Calculate totals and update display
+    function calculateTotals() {
+        let subtotal = 0;
+        let totalTax = 0;
+        let totalAmount = 0;
+        
+        document.querySelectorAll('.item-row').forEach(row => {
+            const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+            const price = parseFloat(row.querySelector('.price-input').value) || 0;
+            const gstPercent = parseFloat(row.querySelector('.gst-input').value) || 0;
+            
+            const rowSubtotal = quantity * price;
+            const rowTax = rowSubtotal * gstPercent / 100;
+            
+            subtotal += rowSubtotal;
+            totalTax += rowTax;
+            totalAmount += rowSubtotal + rowTax;
+        });
+        
+        // Get transport charges and discount
+        const transportCharges = parseFloat(document.getElementById('transportCharges').value) || 0;
+        const discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
+        
+        // Calculate final total
+        totalAmount = totalAmount + transportCharges - discountAmount;
+        
+        // Update summary display
+        document.getElementById('subtotalAmount').textContent = subtotal.toFixed(2);
+        document.getElementById('cgstAmount').textContent = (totalTax / 2).toFixed(2);
+        document.getElementById('sgstAmount').textContent = (totalTax / 2).toFixed(2);
+        document.getElementById('taxAmount').textContent = totalTax.toFixed(2);
+        document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+        
+        // Update amount in words
+        document.getElementById('subtotalWords').textContent = numberToWords(Math.floor(subtotal)) + ' Rupees';
+        document.getElementById('taxWords').textContent = numberToWords(Math.floor(totalTax)) + ' Rupees';
+        document.getElementById('totalWords').textContent = numberToWords(Math.floor(totalAmount)) + ' Rupees';
+    }
+
+    // Show alert message
+    function showAlert(message, type = 'info') {
+        const alertContainer = document.getElementById('alertContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.setAttribute('role', 'alert');
+        alert.innerHTML = `
+            <strong>${type === 'success' ? '✓' : '✗'}</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        alertContainer.innerHTML = '';
+        alertContainer.appendChild(alert);
+        
+        // Auto-hide after 5 seconds if success
+        if (type === 'success') {
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    }
+
+    // Handle form submission
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Collect items data
+        const items = [];
+        let hasErrors = false;
+        
+        document.querySelectorAll('.item-row').forEach(row => {
+            const productSelect = row.querySelector('.product-select');
+            if (!productSelect.value) {
+                hasErrors = true;
+                return;
+            }
+            
+            items.push({
+                product_id: parseInt(productSelect.value),
+                quantity: parseFloat(row.querySelector('.quantity-input').value),
+                unit_price: parseFloat(row.querySelector('.price-input').value),
+                gst_percentage: parseFloat(row.querySelector('.gst-input').value)
+            });
+        });
+        
+        if (hasErrors) {
+            showAlert('✗ Please select a product for all rows', 'danger');
+            return;
+        }
+        
+        if (items.length === 0) {
+            showAlert('✗ Please add at least one product', 'danger');
+            return;
+        }
+        
+        const saveBtn = document.getElementById('saveBtn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        const invoiceId = {{ invoice.id }};
+        const data = {
+            invoice_date: document.getElementById('invoice_date').value,
+            po_number: document.getElementById('po_number').value,
+            challan_no: document.getElementById('challan_no').value,
+            transport_mode: document.getElementById('transport_mode').value,
+            vehicle_number: document.getElementById('vehicle_number').value,
+            contact_person: document.getElementById('contact_person').value,
+            e_weighment: document.getElementById('e_weighment').value,
+            pay_terms: document.getElementById('pay_terms').value,
+            transport_charges: document.getElementById('transportCharges').value,
+            discount: document.getElementById('discountAmount').value,
+            items: items
+        };
+
+        fetch(`/api/invoices/${invoiceId}/update`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+            
+            if (result.success) {
+                showAlert('✓ Invoice updated successfully! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/invoices';
+                }, 1500);
+            } else {
+                showAlert('✗ Error: ' + (result.error || 'Failed to update invoice'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+            showAlert('✗ Network error updating invoice', 'danger');
+        });
+    });
+</script>
+{% endblock %}

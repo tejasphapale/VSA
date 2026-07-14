@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Invoice - {{ invoice.invoice_number }} (3 Copies)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            overflow: visible;
+            width: 100%;
+        }
+
+        body {
+            padding: 0;
+            margin: 0;
+            overflow: visible;
+        }
+
+        .invoice-page {
+            width: 210mm;
+            min-height: 297mm;
+            height: auto;
+            background: white;
+            margin: 0 auto;
+            padding: 10px;
+            page-break-after: always;
+            page-break-inside: avoid;
+            position: relative;
+            font-size: 10px;
+            line-height: 1.3;
+            color: #333;
+            border: none;
+            box-shadow: none;
+            display: block;
+            clear: both;
+            overflow: visible;
+        }
+
+        @media print {
+            * {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                width: 100% !important;
+            }
+
+            .invoice-page {
+                margin: 0 !important;
+                padding: 10mm !important;
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: white !important;
+                width: 100% !important;
+                height: auto !important;
+                min-height: auto !important;
+                position: relative !important;
+            }
+
+            body {
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+            }
+        }
+
+        @media screen {
+            body {
+                padding: 10px;
+                background-color: #f0f0f0;
+            }
+
+            .invoice-page {
+                margin: 10px auto;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                border: 1px solid #ddd;
+            }
+        }
+
+        .copy-label {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-weight: bold;
+            font-size: 8px;
+            color: #666;
+            background: #fff;
+            padding: 3px 8px;
+            border: 1px solid #999;
+            border-radius: 3px;
+            z-index: 10;
+        }
+
+        /* All original styles */
+        .header-container {
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .logo {
+            width: 45px;
+            height: 45px;
+            flex-shrink: 0;
+            border-radius: 3px;
+        }
+
+        .company-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .company-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .company-details {
+            font-size: 8px;
+            color: #666;
+            line-height: 1.2;
+            margin-bottom: 2px;
+        }
+
+        .contact-info {
+            font-size: 8px;
+            color: #0066cc;
+            line-height: 1.1;
+            font-weight: 500;
+        }
+
+        .invoice-header {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 6px 0;
+            letter-spacing: 1px;
+        }
+
+        .gstin-header {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+            margin-bottom: 8px;
+            font-size: 9px;
+            border: 1.5px solid #2c3e50;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .gstin-item {
+            border-right: 1.5px solid #2c3e50;
+            padding: 4px;
+            text-align: center;
+            background-color: #ecf0f1;
+        }
+
+        .gstin-item:last-child {
+            border-right: none;
+        }
+
+        .gstin-label {
+            font-weight: 700;
+            font-size: 8px;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 1px;
+        }
+
+        .gstin-value {
+            font-size: 9px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .details-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .details-box {
+            border: 1.5px solid #bdc3c7;
+            padding: 5px;
+            font-size: 9px;
+            border-radius: 2px;
+            background-color: #f9f9f9;
+        }
+
+        .details-box-title {
+            font-weight: 700;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 2px;
+            margin-bottom: 3px;
+            font-size: 9px;
+            color: #2c3e50;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 70px 1fr;
+            margin-bottom: 1px;
+            font-size: 8px;
+            gap: 4px;
+            align-items: baseline;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .detail-value {
+            color: #555;
+            word-break: break-word;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6px;
+            font-size: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .items-table th {
+            border: 1.5px solid #2c3e50;
+            padding: 4px 3px;
+            background: linear-gradient(to bottom, #34495e, #2c3e50);
+            color: white;
+            font-weight: 700;
+            text-align: center;
+            font-size: 7px;
+            height: 18px;
+            letter-spacing: 0.5px;
+        }
+
+        .items-table td {
+            border: 1px solid #bdc3c7;
+            padding: 3px 2px;
+            text-align: right;
+            font-size: 8px;
+            height: 14px;
+            background-color: #fafafa;
+        }
+
+        .items-table td:nth-child(1) {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .items-table td:nth-child(2) {
+            text-align: left;
+        }
+
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f5f5f5;
+        }
+
+        .note-row {
+            border: 1.5px solid #f39c12;
+            padding: 3px 4px;
+            margin-bottom: 6px;
+            font-size: 7px;
+            font-weight: 600;
+            background-color: #fffbea;
+            border-radius: 2px;
+            color: #7d5f00;
+        }
+
+        .amount-words {
+            border: 1.5px solid #2c3e50;
+            padding: 5px;
+            margin-bottom: 6px;
+            font-size: 8px;
+            line-height: 1.4;
+            border-radius: 2px;
+            background-color: #f0f5ff;
+        }
+
+        .amount-words-left {
+            width: 48%;
+            display: inline-block;
+            vertical-align: top;
+            border-right: 1.5px solid #bdc3c7;
+            padding-right: 4px;
+            margin-right: 4%;
+        }
+
+        .amount-words-right {
+            width: 48%;
+            display: inline-block;
+            vertical-align: top;
+            padding-left: 4px;
+        }
+
+        .amount-words-title {
+            font-weight: 700;
+            margin-bottom: 2px;
+            font-size: 8px;
+            color: #2c3e50;
+            padding-bottom: 2px;
+            border-bottom: 1px solid #2c3e50;
+        }
+
+        .amount-words-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7px;
+        }
+
+        .amount-words-table td {
+            padding: 2px 0;
+            line-height: 1.2;
+        }
+
+        .amount-label {
+            font-weight: 600;
+            width: 35%;
+            text-align: left;
+        }
+
+        .amount-text {
+            color: #333;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .amount-words-table tr.total-row {
+            border-top: 1px solid #2c3e50;
+            border-bottom: 1px solid #2c3e50;
+            margin-top: 1px;
+            padding-top: 1px;
+        }
+
+        .amount-words-table tr.total-row td {
+            font-weight: 700;
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+
+        .totals-small-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8px;
+        }
+
+        .totals-small-table td {
+            border: 1px solid #bdc3c7;
+            padding: 2px 3px;
+            font-size: 8px;
+        }
+
+        .totals-small-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            width: 60%;
+            background-color: #ecf0f1;
+        }
+
+        .totals-small-table td:last-child {
+            text-align: right;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .totals-small-table tr:last-child td {
+            border-top: 2px solid #2c3e50;
+            font-weight: 700;
+            font-size: 9px;
+        }
+
+        .tax-note {
+            border: 1.5px solid #e74c3c;
+            padding: 4px;
+            margin-bottom: 6px;
+            font-size: 6.5px;
+            line-height: 1.3;
+            font-weight: 500;
+            background-color: #fdedec;
+            border-radius: 2px;
+            color: #5b3a3a;
+        }
+
+        .insurance-note {
+            border: 1.5px solid #16a085;
+            padding: 4px;
+            margin-bottom: 6px;
+            font-size: 7px;
+            line-height: 1.2;
+            background-color: #eafaf1;
+            border-radius: 2px;
+            color: #0b5345;
+        }
+
+        .insurance-title {
+            font-weight: 700;
+            margin-bottom: 1px;
+            font-size: 7px;
+            color: #0b5345;
+        }
+
+        .bank-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .bank-box {
+            border: 1.5px solid #2c3e50;
+            padding: 4px;
+            font-size: 8px;
+            border-radius: 2px;
+            background-color: #f0f5ff;
+        }
+
+        .bank-title {
+            font-weight: 700;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 1px;
+            margin-bottom: 2px;
+            font-size: 8px;
+            color: #2c3e50;
+        }
+
+        .bank-detail {
+            margin-bottom: 1px;
+            font-size: 7px;
+            line-height: 1.2;
+            color: #333;
+        }
+
+        .bank-detail strong {
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .signature-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .signature-box {
+            text-align: center;
+            border-top: 2px solid #2c3e50;
+            padding-top: 20px;
+            font-size: 6px;
+            min-height: 35px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .signature-label {
+            margin-top: 1px;
+            font-weight: 700;
+            font-size: 6px;
+            color: #2c3e50;
+            line-height: 1.1;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+                margin: 0;
+            }
+
+            .invoice-page {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+                page-break-inside: avoid;
+                padding: 10px;
+                height: auto;
+                border: none;
+            }
+
+            .action-buttons {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- COPY 1 - ORIGINAL -->
+    <div class="invoice-page">
+        <div class="copy-label">COPY 1 - ORIGINAL FOR RECIPIENT</div>
+
+        <div class="header-container">
+            <div class="header-top">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Company Logo" class="logo">
+                <div class="company-info">
+                    <div class="company-title">V S ABRASIVE PRODUCTS</div>
+                    <div class="company-details">
+                        S.No. 206/1, B-1-R G Industrial Hub, Vehhale Road, Near Sangamner Co-Op. Ind.,<br>
+                        Vehhale, Tal.: Sangamner, Dist.: Ahilyanagar - 422605 (Maharashtra)
+                    </div>
+                    <div class="contact-info">
+                        📧 vsabrasives@gmail.com | MSME: UDYAM-MH-01-0202254 | ☎ (02425) 297756
+                    </div>
+                </div>
+            </div>
+
+            <div class="invoice-header">TAX INVOICE</div>
+
+            <div class="gstin-header">
+                <div class="gstin-item">
+                    <span class="gstin-label">GSTIN</span>
+                    <span class="gstin-value">27AKLPG5978N1Z9</span>
+                </div>
+                <div class="gstin-item">
+                    <span class="gstin-label">STATE CODE</span>
+                    <span class="gstin-value">27 - Maharashtra</span>
+                </div>
+                <div class="gstin-item">
+                    <span class="gstin-label">PAN NO.</span>
+                    <span class="gstin-value">AK5978N</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-row">
+            <div class="details-box">
+                <div class="details-box-title">📋 INVOICE DETAILS</div>
+                <div class="detail-row"><span class="detail-label">Invoice No:</span><span class="detail-value"><strong>{{ invoice.invoice_number }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Invoice Date:</span><span class="detail-value">{{ invoice.invoice_date.strftime('%d-%m-%Y') if invoice.invoice_date else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">PO Number:</span><span class="detail-value">{{ invoice.po_number if invoice.po_number else '2627574' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Place of Supply:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State:</span><span class="detail-value">{{ invoice.customer.customer_state if invoice.customer else 'N/A' }}</span></div>
+            </div>
+
+            <div class="details-box">
+                <div class="details-box-title">👤 BILL TO (BUYER)</div>
+                <div class="detail-row"><span class="detail-label">Name:</span><span class="detail-value"><strong>{{ invoice.customer.customer_name if invoice.customer else 'N/A' }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Address:</span><span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">City:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">GSTIN:</span><span class="detail-value">{{ invoice.customer.gst_number if invoice.customer and invoice.customer.gst_number else 'Unregistered' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State Code:</span><span class="detail-value">27</span></div>
+            </div>
+        </div>
+
+        <div class="details-row">
+            <div class="details-box">
+                <div class="details-box-title">🚚 SHIPMENT DETAILS</div>
+                <div class="detail-row"><span class="detail-label">Challan No:</span><span class="detail-value">{{ invoice.challan_no if invoice.challan_no else invoice.invoice_number }}</span></div>
+                <div class="detail-row"><span class="detail-label">Transport Mode:</span><span class="detail-value">{{ invoice.transport_mode if invoice.transport_mode else 'Road' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Vehicle No:</span><span class="detail-value">{{ invoice.vehicle_number if invoice.vehicle_number else 'TBD' }}</span></div>
+                <div class="detail-row"><span class="detail-label">E-Weighment:</span><span class="detail-value">{{ invoice.e_weighment if invoice.e_weighment else 'Not Applicable' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Contact Person:</span><span class="detail-value">{{ invoice.contact_person if invoice.contact_person else 'N/A' }}</span></div>
+            </div>
+
+            <div class="details-box">
+                <div class="details-box-title">📍 SHIP TO (CONSIGNEE)</div>
+                <div class="detail-row"><span class="detail-label">Name:</span><span class="detail-value"><strong>{{ invoice.customer.customer_name if invoice.customer else 'N/A' }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Address:</span><span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">City:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">GSTIN:</span><span class="detail-value">{{ invoice.customer.gst_number if invoice.customer and invoice.customer.gst_number else 'Unregistered' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State Code:</span><span class="detail-value">27</span></div>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%">SL.</th>
+                    <th style="width: 25%">PRODUCT DESCRIPTION</th>
+                    <th style="width: 8%">HSN/SAC</th>
+                    <th style="width: 8%">QTY</th>
+                    <th style="width: 8%">UNIT</th>
+                    <th style="width: 12%">RATE</th>
+                    <th style="width: 12%">AMOUNT</th>
+                    <th style="width: 7%">TAX %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.items %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ item.product.product_name if item.product else 'Product' }}</td>
+                    <td>{{ item.product.hsn_code if item.product else '0000' }}</td>
+                    <td>{{ "%.2f"|format(item.quantity) }}</td>
+                    <td>{{ item.product.unit if item.product else 'NOS' }}</td>
+                    <td>₹ {{ "%.2f"|format(item.unit_price) }}</td>
+                    <td>₹ {{ "%.2f"|format(item.line_total) }}</td>
+                    <td>{{ "%.0f"|format(item.gst_percentage) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="note-row">
+            ⚠️ NOTE: Breakage, Damage, etc. in transit cannot be entertained | Transport charges as per agreement | Transit Insurance to be done by Consignee
+        </div>
+
+        <div class="amount-words">
+            <div class="amount-words-left">
+                <div class="amount-words-title">💬 AMOUNT IN WORDS</div>
+                <table class="amount-words-table">
+                    <tr>
+                        <td class="amount-label">Subtotal:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.subtotal) }} Only</td>
+                    </tr>
+                    <tr>
+                        <td class="amount-label">Tax Amount:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.total_tax) }} Only</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td class="amount-label">Total:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.total_amount) }} Only</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="amount-words-right">
+                <table class="totals-small-table">
+                    <tr>
+                        <td>Subtotal (Before Tax)</td>
+                        <td>₹ {{ "%.2f"|format(invoice.subtotal) }}</td>
+                    </tr>
+                    <tr>
+                        <td>CGST @ 9%</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax / 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>SGST @ 9%</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax / 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Tax (GST)</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Round Off</td>
+                        <td>₹ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td>TOTAL INVOICE VALUE</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_amount) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="tax-note">
+            <strong>GST CERTIFICATION:</strong> I/we certify that our registration certificate under the GST Act, 2017 is in force on the date on which the supply of goods specified in this tax invoice was made by me/us. The transaction of supply covered by this tax invoice has been effected by me/us and it shall be accounted for in the invoices while filing of returns. The tax paid on supplies has been or shall be paid. Further certified that particulars given above are true and correct and the amount indicated represents the prices actually charged and there is no additional consideration directly or indirectly from the buyer. <strong>Interest @ 24% p.a. charged on outstanding amounts beyond 30 days.</strong>
+        </div>
+
+        <div class="insurance-note">
+            <div class="insurance-title">⚠️ TRANSIT & IMPORTANT NOTES:</div>
+            ✓ Payment to be made by A/c Payee Cheque Only | ✓ Transit Insurance to be done by Consignee | ✓ E-Way Bill: As per GST Rules
+        </div>
+
+        <div class="bank-section">
+            <div class="bank-box">
+                <div class="bank-title">🏦 PAYMENT DETAILS</div>
+                <div class="bank-detail"><strong>Bank:</strong> Union Bank of India</div>
+                <div class="bank-detail"><strong>Account:</strong> V S Abrasive Products</div>
+                <div class="bank-detail"><strong>A/C No:</strong> 322501010033972</div>
+                <div class="bank-detail"><strong>IFSC:</strong> UBIN0532258</div>
+            </div>
+            <div class="bank-box">
+                <div class="bank-title">📋 RECEIVER'S SEAL</div>
+                <div style="height: 45px; display: flex; align-items: flex-end; padding-bottom: 2px; font-size: 7px; color: #666;">
+                    Receiver's Seal & Signature
+                </div>
+            </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">BUYER / RECIPIENT</div>
+            </div>
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">AUTHORIZED SIGNATORY</div>
+            </div>
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">COMPANY SEAL</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COPY 2 - DUPLICATE -->
+    <div class="invoice-page">
+        <div class="copy-label">COPY 2 - DUPLICATE FOR SUPPLIER</div>
+
+        <div class="header-container">
+            <div class="header-top">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Company Logo" class="logo">
+                <div class="company-info">
+                    <div class="company-title">V S ABRASIVE PRODUCTS</div>
+                    <div class="company-details">
+                        S.No. 206/1, B-1-R G Industrial Hub, Vehhale Road, Near Sangamner Co-Op. Ind.,<br>
+                        Vehhale, Tal.: Sangamner, Dist.: Ahilyanagar - 422605 (Maharashtra)
+                    </div>
+                    <div class="contact-info">
+                        📧 vsabrasives@gmail.com | MSME: UDYAM-MH-01-0202254 | ☎ (02425) 297756
+                    </div>
+                </div>
+            </div>
+
+            <div class="invoice-header">TAX INVOICE</div>
+
+            <div class="gstin-header">
+                <div class="gstin-item">
+                    <span class="gstin-label">GSTIN</span>
+                    <span class="gstin-value">27AKLPG5978N1Z9</span>
+                </div>
+                <div class="gstin-item">
+                    <span class="gstin-label">STATE CODE</span>
+                    <span class="gstin-value">27 - Maharashtra</span>
+                </div>
+                <div class="gstin-item">
+                    <span class="gstin-label">PAN NO.</span>
+                    <span class="gstin-value">AK5978N</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-row">
+            <div class="details-box">
+                <div class="details-box-title">📋 INVOICE DETAILS</div>
+                <div class="detail-row"><span class="detail-label">Invoice No:</span><span class="detail-value"><strong>{{ invoice.invoice_number }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Invoice Date:</span><span class="detail-value">{{ invoice.invoice_date.strftime('%d-%m-%Y') if invoice.invoice_date else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">PO Number:</span><span class="detail-value">{{ invoice.po_number if invoice.po_number else '2627574' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Place of Supply:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State:</span><span class="detail-value">{{ invoice.customer.customer_state if invoice.customer else 'N/A' }}</span></div>
+            </div>
+
+            <div class="details-box">
+                <div class="details-box-title">👤 BILL TO (BUYER)</div>
+                <div class="detail-row"><span class="detail-label">Name:</span><span class="detail-value"><strong>{{ invoice.customer.customer_name if invoice.customer else 'N/A' }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Address:</span><span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">City:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">GSTIN:</span><span class="detail-value">{{ invoice.customer.gst_number if invoice.customer and invoice.customer.gst_number else 'Unregistered' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State Code:</span><span class="detail-value">27</span></div>
+            </div>
+        </div>
+
+        <div class="details-row">
+            <div class="details-box">
+                <div class="details-box-title">🚚 SHIPMENT DETAILS</div>
+                <div class="detail-row"><span class="detail-label">Challan No:</span><span class="detail-value">{{ invoice.challan_no if invoice.challan_no else invoice.invoice_number }}</span></div>
+                <div class="detail-row"><span class="detail-label">Transport Mode:</span><span class="detail-value">{{ invoice.transport_mode if invoice.transport_mode else 'Road' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Vehicle No:</span><span class="detail-value">{{ invoice.vehicle_number if invoice.vehicle_number else 'TBD' }}</span></div>
+                <div class="detail-row"><span class="detail-label">E-Weighment:</span><span class="detail-value">{{ invoice.e_weighment if invoice.e_weighment else 'Not Applicable' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Contact Person:</span><span class="detail-value">{{ invoice.contact_person if invoice.contact_person else 'N/A' }}</span></div>
+            </div>
+
+            <div class="details-box">
+                <div class="details-box-title">📍 SHIP TO (CONSIGNEE)</div>
+                <div class="detail-row"><span class="detail-label">Name:</span><span class="detail-value"><strong>{{ invoice.customer.customer_name if invoice.customer else 'N/A' }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Address:</span><span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">City:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">GSTIN:</span><span class="detail-value">{{ invoice.customer.gst_number if invoice.customer and invoice.customer.gst_number else 'Unregistered' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State Code:</span><span class="detail-value">27</span></div>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%">SL.</th>
+                    <th style="width: 25%">PRODUCT DESCRIPTION</th>
+                    <th style="width: 8%">HSN/SAC</th>
+                    <th style="width: 8%">QTY</th>
+                    <th style="width: 8%">UNIT</th>
+                    <th style="width: 12%">RATE</th>
+                    <th style="width: 12%">AMOUNT</th>
+                    <th style="width: 7%">TAX %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.items %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ item.product.product_name if item.product else 'Product' }}</td>
+                    <td>{{ item.product.hsn_code if item.product else '0000' }}</td>
+                    <td>{{ "%.2f"|format(item.quantity) }}</td>
+                    <td>{{ item.product.unit if item.product else 'NOS' }}</td>
+                    <td>₹ {{ "%.2f"|format(item.unit_price) }}</td>
+                    <td>₹ {{ "%.2f"|format(item.line_total) }}</td>
+                    <td>{{ "%.0f"|format(item.gst_percentage) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="note-row">
+            ⚠️ NOTE: Breakage, Damage, etc. in transit cannot be entertained | Transport charges as per agreement | Transit Insurance to be done by Consignee
+        </div>
+
+        <div class="amount-words">
+            <div class="amount-words-left">
+                <div class="amount-words-title">💬 AMOUNT IN WORDS</div>
+                <table class="amount-words-table">
+                    <tr>
+                        <td class="amount-label">Subtotal:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.subtotal) }} Only</td>
+                    </tr>
+                    <tr>
+                        <td class="amount-label">Tax Amount:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.total_tax) }} Only</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td class="amount-label">Total:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.total_amount) }} Only</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="amount-words-right">
+                <table class="totals-small-table">
+                    <tr>
+                        <td>Subtotal (Before Tax)</td>
+                        <td>₹ {{ "%.2f"|format(invoice.subtotal) }}</td>
+                    </tr>
+                    <tr>
+                        <td>CGST @ 9%</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax / 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>SGST @ 9%</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax / 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Tax (GST)</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Round Off</td>
+                        <td>₹ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td>TOTAL INVOICE VALUE</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_amount) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="tax-note">
+            <strong>GST CERTIFICATION:</strong> I/we certify that our registration certificate under the GST Act, 2017 is in force on the date on which the supply of goods specified in this tax invoice was made by me/us. The transaction of supply covered by this tax invoice has been effected by me/us and it shall be accounted for in the invoices while filing of returns. The tax paid on supplies has been or shall be paid. Further certified that particulars given above are true and correct and the amount indicated represents the prices actually charged and there is no additional consideration directly or indirectly from the buyer. <strong>Interest @ 24% p.a. charged on outstanding amounts beyond 30 days.</strong>
+        </div>
+
+        <div class="insurance-note">
+            <div class="insurance-title">⚠️ TRANSIT & IMPORTANT NOTES:</div>
+            ✓ Payment to be made by A/c Payee Cheque Only | ✓ Transit Insurance to be done by Consignee | ✓ E-Way Bill: As per GST Rules
+        </div>
+
+        <div class="bank-section">
+            <div class="bank-box">
+                <div class="bank-title">🏦 PAYMENT DETAILS</div>
+                <div class="bank-detail"><strong>Bank:</strong> Union Bank of India</div>
+                <div class="bank-detail"><strong>Account:</strong> V S Abrasive Products</div>
+                <div class="bank-detail"><strong>A/C No:</strong> 322501010033972</div>
+                <div class="bank-detail"><strong>IFSC:</strong> UBIN0532258</div>
+            </div>
+            <div class="bank-box">
+                <div class="bank-title">📋 RECEIVER'S SEAL</div>
+                <div style="height: 45px; display: flex; align-items: flex-end; padding-bottom: 2px; font-size: 7px; color: #666;">
+                    Receiver's Seal & Signature
+                </div>
+            </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">BUYER / RECIPIENT</div>
+            </div>
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">AUTHORIZED SIGNATORY</div>
+            </div>
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">COMPANY SEAL</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COPY 3 - TRIPLICATE -->
+    <div class="invoice-page">
+        <div class="copy-label">COPY 3 - TRIPLICATE FOR TRANSPORTER</div>
+
+        <div class="header-container">
+            <div class="header-top">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Company Logo" class="logo">
+                <div class="company-info">
+                    <div class="company-title">V S ABRASIVE PRODUCTS</div>
+                    <div class="company-details">
+                        S.No. 206/1, B-1-R G Industrial Hub, Vehhale Road, Near Sangamner Co-Op. Ind.,<br>
+                        Vehhale, Tal.: Sangamner, Dist.: Ahilyanagar - 422605 (Maharashtra)
+                    </div>
+                    <div class="contact-info">
+                        📧 vsabrasives@gmail.com | MSME: UDYAM-MH-01-0202254 | ☎ (02425) 297756
+                    </div>
+                </div>
+            </div>
+
+            <div class="invoice-header">TAX INVOICE</div>
+
+            <div class="gstin-header">
+                <div class="gstin-item">
+                    <span class="gstin-label">GSTIN</span>
+                    <span class="gstin-value">27AKLPG5978N1Z9</span>
+                </div>
+                <div class="gstin-item">
+                    <span class="gstin-label">STATE CODE</span>
+                    <span class="gstin-value">27 - Maharashtra</span>
+                </div>
+                <div class="gstin-item">
+                    <span class="gstin-label">PAN NO.</span>
+                    <span class="gstin-value">AK5978N</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-row">
+            <div class="details-box">
+                <div class="details-box-title">📋 INVOICE DETAILS</div>
+                <div class="detail-row"><span class="detail-label">Invoice No:</span><span class="detail-value"><strong>{{ invoice.invoice_number }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Invoice Date:</span><span class="detail-value">{{ invoice.invoice_date.strftime('%d-%m-%Y') if invoice.invoice_date else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">PO Number:</span><span class="detail-value">{{ invoice.po_number if invoice.po_number else '2627574' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Place of Supply:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State:</span><span class="detail-value">{{ invoice.customer.customer_state if invoice.customer else 'N/A' }}</span></div>
+            </div>
+
+            <div class="details-box">
+                <div class="details-box-title">👤 BILL TO (BUYER)</div>
+                <div class="detail-row"><span class="detail-label">Name:</span><span class="detail-value"><strong>{{ invoice.customer.customer_name if invoice.customer else 'N/A' }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Address:</span><span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">City:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">GSTIN:</span><span class="detail-value">{{ invoice.customer.gst_number if invoice.customer and invoice.customer.gst_number else 'Unregistered' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State Code:</span><span class="detail-value">27</span></div>
+            </div>
+        </div>
+
+        <div class="details-row">
+            <div class="details-box">
+                <div class="details-box-title">🚚 SHIPMENT DETAILS</div>
+                <div class="detail-row"><span class="detail-label">Challan No:</span><span class="detail-value">{{ invoice.challan_no if invoice.challan_no else invoice.invoice_number }}</span></div>
+                <div class="detail-row"><span class="detail-label">Transport Mode:</span><span class="detail-value">{{ invoice.transport_mode if invoice.transport_mode else 'Road' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Vehicle No:</span><span class="detail-value">{{ invoice.vehicle_number if invoice.vehicle_number else 'TBD' }}</span></div>
+                <div class="detail-row"><span class="detail-label">E-Weighment:</span><span class="detail-value">{{ invoice.e_weighment if invoice.e_weighment else 'Not Applicable' }}</span></div>
+                <div class="detail-row"><span class="detail-label">Contact Person:</span><span class="detail-value">{{ invoice.contact_person if invoice.contact_person else 'N/A' }}</span></div>
+            </div>
+
+            <div class="details-box">
+                <div class="details-box-title">📍 SHIP TO (CONSIGNEE)</div>
+                <div class="detail-row"><span class="detail-label">Name:</span><span class="detail-value"><strong>{{ invoice.customer.customer_name if invoice.customer else 'N/A' }}</strong></span></div>
+                <div class="detail-row"><span class="detail-label">Address:</span><span class="detail-value">{{ invoice.customer.customer_address if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">City:</span><span class="detail-value">{{ invoice.customer.customer_city if invoice.customer else 'N/A' }}</span></div>
+                <div class="detail-row"><span class="detail-label">GSTIN:</span><span class="detail-value">{{ invoice.customer.gst_number if invoice.customer and invoice.customer.gst_number else 'Unregistered' }}</span></div>
+                <div class="detail-row"><span class="detail-label">State Code:</span><span class="detail-value">27</span></div>
+            </div>
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%">SL.</th>
+                    <th style="width: 25%">PRODUCT DESCRIPTION</th>
+                    <th style="width: 8%">HSN/SAC</th>
+                    <th style="width: 8%">QTY</th>
+                    <th style="width: 8%">UNIT</th>
+                    <th style="width: 12%">RATE</th>
+                    <th style="width: 12%">AMOUNT</th>
+                    <th style="width: 7%">TAX %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.items %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ item.product.product_name if item.product else 'Product' }}</td>
+                    <td>{{ item.product.hsn_code if item.product else '0000' }}</td>
+                    <td>{{ "%.2f"|format(item.quantity) }}</td>
+                    <td>{{ item.product.unit if item.product else 'NOS' }}</td>
+                    <td>₹ {{ "%.2f"|format(item.unit_price) }}</td>
+                    <td>₹ {{ "%.2f"|format(item.line_total) }}</td>
+                    <td>{{ "%.0f"|format(item.gst_percentage) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="note-row">
+            ⚠️ NOTE: Breakage, Damage, etc. in transit cannot be entertained | Transport charges as per agreement | Transit Insurance to be done by Consignee
+        </div>
+
+        <div class="amount-words">
+            <div class="amount-words-left">
+                <div class="amount-words-title">💬 AMOUNT IN WORDS</div>
+                <table class="amount-words-table">
+                    <tr>
+                        <td class="amount-label">Subtotal:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.subtotal) }} Only</td>
+                    </tr>
+                    <tr>
+                        <td class="amount-label">Tax Amount:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.total_tax) }} Only</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td class="amount-label">Total:</td>
+                        <td class="amount-text">Rupees {{ "%.2f"|format(invoice.total_amount) }} Only</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="amount-words-right">
+                <table class="totals-small-table">
+                    <tr>
+                        <td>Subtotal (Before Tax)</td>
+                        <td>₹ {{ "%.2f"|format(invoice.subtotal) }}</td>
+                    </tr>
+                    <tr>
+                        <td>CGST @ 9%</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax / 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>SGST @ 9%</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax / 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Tax (GST)</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_tax) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Round Off</td>
+                        <td>₹ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td>TOTAL INVOICE VALUE</td>
+                        <td>₹ {{ "%.2f"|format(invoice.total_amount) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="tax-note">
+            <strong>GST CERTIFICATION:</strong> I/we certify that our registration certificate under the GST Act, 2017 is in force on the date on which the supply of goods specified in this tax invoice was made by me/us. The transaction of supply covered by this tax invoice has been effected by me/us and it shall be accounted for in the invoices while filing of returns. The tax paid on supplies has been or shall be paid. Further certified that particulars given above are true and correct and the amount indicated represents the prices actually charged and there is no additional consideration directly or indirectly from the buyer. <strong>Interest @ 24% p.a. charged on outstanding amounts beyond 30 days.</strong>
+        </div>
+
+        <div class="insurance-note">
+            <div class="insurance-title">⚠️ TRANSIT & IMPORTANT NOTES:</div>
+            ✓ Payment to be made by A/c Payee Cheque Only | ✓ Transit Insurance to be done by Consignee | ✓ E-Way Bill: As per GST Rules
+        </div>
+
+        <div class="bank-section">
+            <div class="bank-box">
+                <div class="bank-title">🏦 PAYMENT DETAILS</div>
+                <div class="bank-detail"><strong>Bank:</strong> Union Bank of India</div>
+                <div class="bank-detail"><strong>Account:</strong> V S Abrasive Products</div>
+                <div class="bank-detail"><strong>A/C No:</strong> 322501010033972</div>
+                <div class="bank-detail"><strong>IFSC:</strong> UBIN0532258</div>
+            </div>
+            <div class="bank-box">
+                <div class="bank-title">📋 RECEIVER'S SEAL</div>
+                <div style="height: 45px; display: flex; align-items: flex-end; padding-bottom: 2px; font-size: 7px; color: #666;">
+                    Receiver's Seal & Signature
+                </div>
+            </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">BUYER / RECIPIENT</div>
+            </div>
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">AUTHORIZED SIGNATORY</div>
+            </div>
+            <div class="signature-box">
+                _____________________
+                <div class="signature-label">COMPANY SEAL</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

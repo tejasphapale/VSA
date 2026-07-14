@@ -1,0 +1,838 @@
+{% extends "base.html" %}
+
+{% block title %}Customers - Shop Billing Software{% endblock %}
+
+{% block content %}
+<style>
+    .customers-container {
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .page-header {
+        background: white;
+        padding: 25px 30px;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .page-header h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 28px;
+        font-weight: 700;
+    }
+    
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 12px 25px;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    .card-custom {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .filters-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .search-input {
+        flex: 1;
+        min-width: 250px;
+        padding: 12px 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .filter-select {
+        padding: 12px 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .table-custom {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .table-custom thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        font-weight: 600;
+        font-size: 13px;
+        text-align: left;
+        border: none;
+    }
+    
+    .table-custom thead th:first-child {
+        border-radius: 10px 0 0 10px;
+    }
+    
+    .table-custom thead th:last-child {
+        border-radius: 0 10px 10px 0;
+    }
+    
+    .table-custom tbody tr {
+        transition: all 0.3s ease;
+    }
+    
+    .table-custom tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.01);
+    }
+    
+    .table-custom tbody td {
+        padding: 15px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 14px;
+    }
+    
+    .badge-custom {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-success-custom {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+    }
+    
+    .badge-danger-custom {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        color: white;
+    }
+    
+    .badge-warning-custom {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    
+    .badge-info-custom {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    
+    .action-btn-custom {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 0 3px;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    
+    .btn-view {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    
+    .btn-edit {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-delete {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        color: white;
+    }
+    
+    .action-btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    
+    .modal-custom {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        backdrop-filter: blur(5px);
+    }
+    
+    .modal-content-custom {
+        background: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 600px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .modal-header-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 20px 20px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header-custom h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+    }
+    
+    .modal-close-custom {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        font-size: 28px;
+        cursor: pointer;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .modal-close-custom:hover {
+        background: rgba(255,255,255,0.3);
+        transform: rotate(90deg);
+    }
+    
+    .modal-body-custom {
+        padding: 30px;
+    }
+    
+    .form-row-custom {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .form-group-custom {
+        margin-bottom: 20px;
+    }
+    
+    .form-group-custom label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 14px;
+    }
+    
+    .form-control-custom {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+    
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-actions-custom {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #e2e8f0;
+    }
+    
+    .btn-secondary-custom {
+        background: #95a5a6;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 25px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary-custom:hover {
+        background: #7f8c8d;
+    }
+    
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stat-card .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 5px;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 14px;
+        color: #7f8c8d;
+        font-weight: 500;
+    }
+</style>
+
+<div class="customers-container">
+    <div class="page-header">
+        <h1><i class="fas fa-users"></i> Customers Management</h1>
+        <button class="btn-primary-custom" id="addCustomerBtn">
+            <i class="fas fa-user-plus"></i> Add New Customer
+        </button>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-value" id="totalCustomers">0</div>
+            <div class="stat-label">Total Customers</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="activeCustomers" style="color: #27ae60;">0</div>
+            <div class="stat-label">Active Customers</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="paidCustomers" style="color: #38ef7d;">0</div>
+            <div class="stat-label">Fully Paid</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="pendingCustomers" style="color: #f5576c;">0</div>
+            <div class="stat-label">Pending Payments</div>
+        </div>
+    </div>
+    
+    <div class="card-custom">
+        <div class="filters-row">
+            <input type="text" id="customerSearch" class="search-input" placeholder="🔍 Search customers by name or code...">
+            <select id="paymentStatusFilter" class="filter-select">
+                <option value="all">All Status</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="past_pending">Past Pending</option>
+            </select>
+        </div>
+        
+        <table class="table-custom" id="customersTable">
+            <thead>
+                <tr>
+                    <th>Customer Code</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>City</th>
+                    <th>GST Number</th>
+                    <th>Credit Limit</th>
+                    <th>Balance</th>
+                    <th>Payment Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="loading">
+                    <td colspan="9" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #667eea;"></i>
+                        <p style="margin-top: 10px; color: #7f8c8d;">Loading customers...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Customer Profile Modal (Detailed View) -->
+<div id="customerProfileModal" class="modal-custom">
+    <div class="modal-content-custom" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header-custom">
+            <h2><i class="fas fa-user-circle"></i> Customer Profile</h2>
+            <button class="modal-close-custom" onclick="closeCustomerProfileModal()">&times;</button>
+        </div>
+        
+        <div class="modal-body-custom" id="customerProfileContent">
+            <!-- Profile content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Customer Modal -->
+<div id="customerModal" class="modal-custom">
+    <div class="modal-content-custom">
+        <div class="modal-header-custom">
+            <h2 id="customerModalTitle"><i class="fas fa-user-plus"></i> Add New Customer</h2>
+            <button class="modal-close-custom" onclick="closeCustomerModal()">&times;</button>
+        </div>
+        <form id="customerForm">
+            <div class="modal-body-custom">
+                <div class="form-row-custom">
+                    <div class="form-group-custom">
+                        <label>Customer Name *</label>
+                        <input type="text" name="customer_name" class="form-control-custom" required placeholder="Enter customer name">
+                    </div>
+                    <div class="form-group-custom">
+                        <label>Phone Number</label>
+                        <input type="tel" name="customer_phone" class="form-control-custom" placeholder="Enter phone number">
+                    </div>
+                </div>
+                
+                <div class="form-row-custom">
+                    <div class="form-group-custom">
+                        <label>Email</label>
+                        <input type="email" name="customer_email" class="form-control-custom" placeholder="Enter email address">
+                    </div>
+                    <div class="form-group-custom">
+                        <label>City</label>
+                        <input type="text" name="customer_city" class="form-control-custom" placeholder="Enter city">
+                    </div>
+                </div>
+                
+                <div class="form-row-custom">
+                    <div class="form-group-custom">
+                        <label>Address</label>
+                        <input type="text" name="customer_address" class="form-control-custom" placeholder="Enter address">
+                    </div>
+                    <div class="form-group-custom">
+                        <label>GST Number</label>
+                        <input type="text" name="gst_number" class="form-control-custom" placeholder="Enter GST number">
+                    </div>
+                </div>
+                
+                <div class="form-row-custom">
+                    <div class="form-group-custom">
+                        <label>Credit Limit (₹)</label>
+                        <input type="number" name="credit_limit" class="form-control-custom" step="0.01" value="0" placeholder="Enter credit limit">
+                    </div>
+                    <div class="form-group-custom">
+                        <label>Opening Balance (₹)</label>
+                        <input type="number" name="opening_balance" class="form-control-custom" step="0.01" value="0" placeholder="Enter opening balance">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-body-custom" style="padding-top: 0;">
+                <div class="form-actions-custom">
+                    <button type="submit" class="btn-primary-custom">Save Customer</button>
+                    <button type="button" class="btn-secondary-custom" onclick="closeCustomerModal()">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let customersData = [];
+let currentEditingCustomer = null;
+
+// Load customers with payment status
+function loadCustomers() {
+    fetch('/api/customers')
+        .then(r => r.json())
+        .then(data => {
+            customersData = data;
+            renderCustomers(data);
+            updateStats(data);
+        })
+        .catch(err => {
+            console.error('Error loading customers:', err);
+            document.querySelector('#customersTable tbody').innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #e74c3c;">Error loading customers</td></tr>';
+        });
+}
+
+function calculatePaymentStatus(customer) {
+    const balance = customer.opening_balance || 0;
+    if (balance <= 0) {
+        return 'Paid';
+    }
+    return 'Pending';
+}
+
+function renderCustomers(data) {
+    const tbody = document.querySelector('#customersTable tbody');
+    tbody.innerHTML = '';
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #7f8c8d;">No customers found</td></tr>';
+        return;
+    }
+    
+    data.forEach(customer => {
+        const paymentStatus = calculatePaymentStatus(customer);
+        let statusClass = 'badge-info-custom';
+        if (paymentStatus === 'Paid') statusClass = 'badge-success-custom';
+        else if (paymentStatus === 'Pending') statusClass = 'badge-warning-custom';
+        else if (paymentStatus === 'Past Pending') statusClass = 'badge-danger-custom';
+        
+        const balance = customer.opening_balance || 0;
+        let rowHtml = '<tr>';
+        rowHtml += '<td><strong>' + customer.customer_code + '</strong></td>';
+        rowHtml += '<td>' + customer.customer_name + '</td>';
+        rowHtml += '<td>' + (customer.customer_phone || '-') + '</td>';
+        rowHtml += '<td>' + (customer.customer_city || '-') + '</td>';
+        rowHtml += '<td>' + (customer.gst_number || '-') + '</td>';
+        rowHtml += '<td>₹' + (customer.credit_limit || 0).toFixed(2) + '</td>';
+        rowHtml += '<td style="font-weight: 700; color: ' + (balance > 0 ? '#e74c3c' : '#27ae60') + ';">₹' + balance.toFixed(2) + '</td>';
+        rowHtml += '<td><span class="badge-custom ' + statusClass + '">' + paymentStatus + '</span></td>';
+        rowHtml += '<td>';
+        rowHtml += '<button class="action-btn-custom btn-view" onclick="viewCustomerProfile(' + customer.id + ')" title="View Profile"><i class="fas fa-user-circle"></i></button>';
+        rowHtml += '<button class="action-btn-custom btn-edit" onclick="editCustomer(' + customer.id + ')" title="Edit"><i class="fas fa-edit"></i></button>';
+        rowHtml += '<button class="action-btn-custom btn-delete" onclick="deleteCustomer(' + customer.id + ')" title="Delete"><i class="fas fa-trash"></i></button>';
+        rowHtml += '</td></tr>';
+        
+        tbody.innerHTML += rowHtml;
+    });
+}
+
+function updateStats(data) {
+    const total = data.length;
+    const active = data.filter(c => c.is_active).length;
+    const paid = data.filter(c => calculatePaymentStatus(c) === 'Paid').length;
+    const pending = data.filter(c => calculatePaymentStatus(c) !== 'Paid').length;
+    
+    document.getElementById('totalCustomers').textContent = total;
+    document.getElementById('activeCustomers').textContent = active;
+    document.getElementById('paidCustomers').textContent = paid;
+    document.getElementById('pendingCustomers').textContent = pending;
+}
+
+// Search customers
+document.getElementById('customerSearch').addEventListener('keyup', function() {
+    const query = this.value.toLowerCase();
+    
+    const filtered = customersData.filter(c => {
+        return c.customer_name.toLowerCase().includes(query) || 
+               c.customer_code.toLowerCase().includes(query);
+    });
+    
+    renderCustomers(filtered);
+});
+
+// Filter by payment status
+document.getElementById('paymentStatusFilter').addEventListener('change', function() {
+    const status = this.value;
+    
+    if (status === 'all') {
+        renderCustomers(customersData);
+    } else {
+        const filtered = customersData.filter(c => calculatePaymentStatus(c) === status);
+        renderCustomers(filtered);
+    }
+});
+
+// Add customer
+document.getElementById('addCustomerBtn').addEventListener('click', function() {
+    currentEditingCustomer = null;
+    document.getElementById('customerForm').reset();
+    document.getElementById('customerModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Add New Customer';
+    document.getElementById('customerModal').style.display = 'block';
+});
+
+// Edit customer
+function editCustomer(id) {
+    const customer = customersData.find(c => c.id === id);
+    if (!customer) return;
+    
+    currentEditingCustomer = customer;
+    
+    document.getElementById('customerModalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Customer';
+    document.querySelector('[name="customer_name"]').value = customer.customer_name;
+    document.querySelector('[name="customer_phone"]').value = customer.customer_phone;
+    document.querySelector('[name="customer_email"]').value = customer.customer_email;
+    document.querySelector('[name="customer_city"]').value = customer.customer_city;
+    document.querySelector('[name="customer_address"]').value = customer.customer_address;
+    document.querySelector('[name="gst_number"]').value = customer.gst_number;
+    document.querySelector('[name="credit_limit"]').value = customer.credit_limit;
+    
+    document.getElementById('customerModal').style.display = 'block';
+}
+
+// Save customer
+document.getElementById('customerForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        customer_name: this.customer_name.value,
+        customer_phone: this.customer_phone.value,
+        customer_email: this.customer_email.value,
+        customer_city: this.customer_city.value,
+        customer_address: this.customer_address.value,
+        gst_number: this.gst_number.value,
+        credit_limit: parseFloat(this.credit_limit.value),
+        opening_balance: parseFloat(this.opening_balance.value)
+    };
+    
+    const url = currentEditingCustomer 
+        ? '/api/customers/' + currentEditingCustomer.id
+        : '/api/customers';
+    const method = currentEditingCustomer ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+    })
+    .then(r => r.json())
+    .then(data => {
+        closeCustomerModal();
+        loadCustomers();
+        alert('Customer saved successfully!');
+    })
+    .catch(err => {
+        console.error('Error saving customer:', err);
+        alert('Error saving customer');
+    });
+});
+
+// Delete customer
+function deleteCustomer(id) {
+    if (confirm('Are you sure you want to delete this customer?')) {
+        fetch('/api/customers/' + id, { method: 'DELETE' })
+            .then(() => {
+                loadCustomers();
+                alert('Customer deleted successfully!');
+            })
+            .catch(err => {
+                console.error('Error deleting customer:', err);
+                alert('Error deleting customer');
+            });
+    }
+}
+
+function closeCustomerModal() {
+    document.getElementById('customerModal').style.display = 'none';
+}
+
+function closeCustomerProfileModal() {
+    document.getElementById('customerProfileModal').style.display = 'none';
+}
+
+// View customer profile with all details
+function viewCustomerProfile(id) {
+    fetch('/api/customers/' + id + '/profile')
+        .then(r => r.json())
+        .then(data => {
+            renderCustomerProfile(data);
+            document.getElementById('customerProfileModal').style.display = 'block';
+        })
+        .catch(err => {
+            console.error('Error loading profile:', err);
+            alert('Error loading customer profile');
+        });
+}
+
+function renderCustomerProfile(data) {
+    const customer = data.customer;
+    const analytics = data.analytics;
+    const invoices = data.invoices;
+    const payments = data.payments;
+    
+    let html = '<div style="padding: 20px;">';
+    
+    // Customer Basic Info with WhatsApp Share Button
+    html += '<div style="margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 10px; display: flex; justify-content: space-between; align-items: flex-start;">';
+    html += '<div style="flex: 1;">';
+    html += '<h3 style="color: #2c3e50; margin-bottom: 15px;"><i class="fas fa-user"></i> Customer Information</h3>';
+    html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">';
+    html += '<div><strong>Customer Code:</strong> ' + customer.customer_code + '</div>';
+    html += '<div><strong>Name:</strong> ' + customer.customer_name + '</div>';
+    html += '<div><strong>Phone:</strong> ' + (customer.customer_phone || '-') + '</div>';
+    html += '<div><strong>Email:</strong> ' + (customer.customer_email || '-') + '</div>';
+    html += '<div><strong>City:</strong> ' + (customer.customer_city || '-') + '</div>';
+    html += '<div><strong>Address:</strong> ' + (customer.customer_address || '-') + '</div>';
+    html += '<div><strong>GST Number:</strong> ' + (customer.gst_number || '-') + '</div>';
+    html += '<div><strong>Status:</strong> <span class="badge-custom ' + (customer.is_active ? 'badge-success-custom' : 'badge-danger-custom') + '">' + (customer.is_active ? 'Active' : 'Inactive') + '</span></div>';
+    html += '</div></div>';
+    
+    // WhatsApp Share Button
+    html += '<div style="margin-left: 20px;">';
+    html += '<button onclick="shareOnWhatsApp(' + customer.id + ')" style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: white; border: none; padding: 15px 25px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4); transition: all 0.3s ease;">';
+    html += '<i class="fab fa-whatsapp" style="font-size: 20px;"></i><span>Share on WhatsApp</span></button>';
+    html += '</div></div>';
+    
+    // Financial Analytics
+    html += '<div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">';
+    html += '<h3 style="margin-bottom: 15px;"><i class="fas fa-chart-line"></i> Financial Summary</h3>';
+    html += '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">';
+    html += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; text-align: center;">';
+    html += '<div style="font-size: 12px; opacity: 0.9;">Total Spent</div>';
+    html += '<div style="font-size: 20px; font-weight: 700;">₹' + analytics.total_spent.toFixed(2) + '</div></div>';
+    html += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; text-align: center;">';
+    html += '<div style="font-size: 12px; opacity: 0.9;">Total Paid</div>';
+    html += '<div style="font-size: 20px; font-weight: 700;">₹' + analytics.total_paid.toFixed(2) + '</div></div>';
+    html += '<div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; text-align: center;">';
+    html += '<div style="font-size: 12px; opacity: 0.9;">Outstanding Balance</div>';
+    html += '<div style="font-size: 20px; font-weight: 700; color: #ff6b6b;">₹' + analytics.outstanding_balance.toFixed(2) + '</div></div>';
+    html += '</div></div>';
+    
+    // Recent Invoices
+    html += '<div style="margin-bottom: 25px;">';
+    html += '<h3 style="color: #2c3e50; margin-bottom: 15px;"><i class="fas fa-file-invoice"></i> Recent Invoices</h3>';
+    html += renderInvoicesTable(invoices);
+    html += '</div>';
+    
+    // Payment History
+    html += '<div>';
+    html += '<h3 style="color: #2c3e50; margin-bottom: 15px;"><i class="fas fa-credit-card"></i> Payment History</h3>';
+    html += renderPaymentsTable(payments);
+    html += '</div></div>';
+    
+    document.getElementById('customerProfileContent').innerHTML = html;
+}
+
+// Share customer sales report on WhatsApp
+function shareOnWhatsApp(customerId) {
+    fetch('/api/sales/customer/' + customerId + '/whatsapp-share', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.open(data.whatsapp_url, '_blank');
+        } else {
+            alert('Error sharing on WhatsApp');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Error sharing on WhatsApp');
+    });
+}
+
+function renderInvoicesTable(invoices) {
+    if (!invoices || invoices.length === 0) {
+        return '<p style="color: #7f8c8d; padding: 20px; text-align: center;">No invoices found</p>';
+    }
+    
+    let html = '<table style="width: 100%; border-collapse: collapse;"><thead><tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">';
+    html += '<th style="padding: 12px; text-align: left;">Invoice #</th><th style="padding: 12px; text-align: left;">Date</th><th style="padding: 12px; text-align: left;">Total</th><th style="padding: 12px; text-align: left;">Status</th></tr></thead><tbody>';
+    
+    invoices.forEach((inv, index) => {
+        const bgColor = index % 2 === 0 ? '#f8f9fa' : 'white';
+        const statusClass = inv.payment_status === 'Paid' ? 'badge-success-custom' : 'badge-danger-custom';
+        html += '<tr style="background: ' + bgColor + ';">';
+        html += '<td style="padding: 12px;"><strong>' + inv.invoice_number + '</strong></td>';
+        html += '<td style="padding: 12px;">' + inv.invoice_date + '</td>';
+        html += '<td style="padding: 12px;">₹' + inv.total_amount.toFixed(2) + '</td>';
+        html += '<td style="padding: 12px;"><span class="badge-custom ' + statusClass + '">' + inv.payment_status + '</span></td>';
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    return html;
+}
+
+function renderPaymentsTable(payments) {
+    if (!payments || payments.length === 0) {
+        return '<p style="color: #7f8c8d; padding: 20px; text-align: center;">No payments recorded</p>';
+    }
+    
+    let html = '<table style="width: 100%; border-collapse: collapse;"><thead><tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">';
+    html += '<th style="padding: 12px; text-align: left;">Invoice #</th><th style="padding: 12px; text-align: left;">Payment Date</th><th style="padding: 12px; text-align: left;">Amount</th><th style="padding: 12px; text-align: left;">Method</th></tr></thead><tbody>';
+    
+    payments.forEach((pay, index) => {
+        const bgColor = index % 2 === 0 ? '#f8f9fa' : 'white';
+        html += '<tr style="background: ' + bgColor + ';">';
+        html += '<td style="padding: 12px;"><strong>' + pay.invoice_number + '</strong></td>';
+        html += '<td style="padding: 12px;">' + pay.payment_date + '</td>';
+        html += '<td style="padding: 12px;">₹' + pay.amount.toFixed(2) + '</td>';
+        html += '<td style="padding: 12px;">' + (pay.payment_method || '-') + '</td>';
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    return html;
+}
+
+function closeCustomerProfileModal() {
+    document.getElementById('customerProfileModal').style.display = 'none';
+}
+
+// Load customers on page load
+loadCustomers();
+</script>
+{% endblock %}
